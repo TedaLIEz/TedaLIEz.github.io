@@ -1,0 +1,513 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>Aichi_B7A</title>
+  
+  
+  <link href="/atom.xml" rel="self"/>
+  
+  <link href="https://tedaliez.github.io/"/>
+  <updated>2020-09-13T02:41:40.037Z</updated>
+  <id>https://tedaliez.github.io/</id>
+  
+  <author>
+    <name>Jian Guo</name>
+    
+  </author>
+  
+  <generator uri="http://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>FFMpeg-Android开发-简单音视频同步</title>
+    <link href="https://tedaliez.github.io/2020/09/13/FFMpeg-Android%E5%BC%80%E5%8F%91-%E7%AE%80%E5%8D%95%E9%9F%B3%E8%A7%86%E9%A2%91%E5%90%8C%E6%AD%A5/"/>
+    <id>https://tedaliez.github.io/2020/09/13/FFMpeg-Android开发-简单音视频同步/</id>
+    <published>2020-09-13T02:39:03.000Z</published>
+    <updated>2020-09-13T02:41:40.037Z</updated>
+    
+    <summary type="html">
+    
+      
+      
+        
+        
+          &lt;p&gt;本文代码可参考代码可以参考&lt;a href=&quot;https://github.com/TedaLIEz/MyFFMpegAndroid/tree/v2.1&quot; target=&quot;_blank&quot;
+        
+      
+    
+    </summary>
+    
+    
+  </entry>
+  
+  <entry>
+    <title>Kotlin协程异常处理</title>
+    <link href="https://tedaliez.github.io/2020/09/12/Kotlin%E5%8D%8F%E7%A8%8B%E5%BC%82%E5%B8%B8%E5%A4%84%E7%90%86/"/>
+    <id>https://tedaliez.github.io/2020/09/12/Kotlin协程异常处理/</id>
+    <published>2020-09-12T01:09:48.000Z</published>
+    <updated>2020-10-31T04:08:18.520Z</updated>
+    
+    <summary type="html">
+    
+      
+      
+        
+        
+          &lt;p&gt;Kotlin 的协程满足结构化语义：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;p&gt;A parent-Coroutine finishes only after all its child-Coroutines have finished.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;When
+        
+      
+    
+    </summary>
+    
+    
+      <category term="kotlin, 协程" scheme="https://tedaliez.github.io/tags/kotlin-%E5%8D%8F%E7%A8%8B/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>FFMpeg-Android开发-简单播放音频</title>
+    <link href="https://tedaliez.github.io/2020/08/29/FFMpeg-Android%E5%BC%80%E5%8F%91-%E7%AE%80%E5%8D%95%E6%92%AD%E6%94%BE%E9%9F%B3%E9%A2%91/"/>
+    <id>https://tedaliez.github.io/2020/08/29/FFMpeg-Android开发-简单播放音频/</id>
+    <published>2020-08-29T01:04:55.000Z</published>
+    <updated>2020-08-29T01:11:32.640Z</updated>
+    
+    <summary type="html">
+    
+      
+      
+        
+        
+          &lt;p&gt;本文部分对应的源代码可参考&lt;a href=&quot;https://github.com/TedaLIEz/MyFFMpegAndroid/tree/v1.2&quot; target=&quot;_blank&quot;
+        
+      
+    
+    </summary>
+    
+    
+  </entry>
+  
+  <entry>
+    <title>FFMpeg-Android开发-简单播放视频</title>
+    <link href="https://tedaliez.github.io/2020/08/23/FFMpeg-Android%E5%BC%80%E5%8F%91-%E7%AE%80%E5%8D%95%E6%92%AD%E6%94%BE%E8%A7%86%E9%A2%91/"/>
+    <id>https://tedaliez.github.io/2020/08/23/FFMpeg-Android开发-简单播放视频/</id>
+    <published>2020-08-23T02:25:15.000Z</published>
+    <updated>2020-08-23T02:42:08.566Z</updated>
+    
+    <summary type="html">
+    
+      
+      
+        
+        
+          &lt;p&gt;本文部分对应的源代码可参考&lt;a href=&quot;https://github.com/TedaLIEz/MyFFMpegAndroid/tree/v1.1&quot; target=&quot;_blank&quot;
+        
+      
+    
+    </summary>
+    
+    
+  </entry>
+  
+  <entry>
+    <title>FFMpeg-Android开发-解析视频格式</title>
+    <link href="https://tedaliez.github.io/2020/08/22/FFMpeg-Android%E5%BC%80%E5%8F%91-%E8%A7%A3%E6%9E%90%E8%A7%86%E9%A2%91%E6%A0%BC%E5%BC%8F/"/>
+    <id>https://tedaliez.github.io/2020/08/22/FFMpeg-Android开发-解析视频格式/</id>
+    <published>2020-08-22T01:07:51.000Z</published>
+    <updated>2020-08-22T02:00:15.496Z</updated>
+    
+    <summary type="html">
+    
+      
+      
+        
+        
+          &lt;p&gt;在正式使用FFMpeg完成视频的播放之前，我想先写一篇文章，简单介绍一下如何使用FFMpeg去获取一个视频的基本信息。通过这篇文章，来简单介绍一下FFmpeg中的相关概念，以及视频的一些基本概念。&lt;/p&gt;
+&lt;h2 id=&quot;视频基本概念&quot;&gt;&lt;a href=&quot;#视频基本概念&quot;
+        
+      
+    
+    </summary>
+    
+    
+  </entry>
+  
+  <entry>
+    <title>FFMpeg Android开发101-编译和引入</title>
+    <link href="https://tedaliez.github.io/2020/08/15/FFMpeg-Android%E5%BC%80%E5%8F%91101-%E7%BC%96%E8%AF%91%E5%92%8C%E5%BC%95%E5%85%A5/"/>
+    <id>https://tedaliez.github.io/2020/08/15/FFMpeg-Android开发101-编译和引入/</id>
+    <published>2020-08-15T02:15:51.000Z</published>
+    <updated>2020-08-15T03:25:40.396Z</updated>
+    
+    <summary type="html">
+    
+      
+      
+        
+        
+          &lt;p&gt;本系列会尝试将FFMpeg引入到android项目中，并借助FFMpeg完成一些音视频的简单饮用；FFMpeg作为一个成熟的音视频编解码工具被大量项目使用，但将FFMpeg引入到Android开发的文档并不多，国内有一部分但大量已经过时，这个系列会重新尝试带领大家完成整个过
+        
+      
+    
+    </summary>
+    
+    
+  </entry>
+  
+  <entry>
+    <title>Jetpack Compose简介与思考</title>
+    <link href="https://tedaliez.github.io/2020/07/25/Jetpack-Compose%E7%AE%80%E4%BB%8B%E4%B8%8E%E6%80%9D%E8%80%83/"/>
+    <id>https://tedaliez.github.io/2020/07/25/Jetpack-Compose简介与思考/</id>
+    <published>2020-07-25T01:22:01.000Z</published>
+    <updated>2020-07-25T01:22:31.815Z</updated>
+    
+    <summary type="html">
+    
+      
+      
+        
+        
+          &lt;p&gt;Jetpack Compose可以认为是Android对UI代码架构的演进，核心目的是为了让安卓自身的UI代码能够跟随现代UI开发的步伐&lt;/p&gt;
+&lt;h2 id=&quot;现代UI开发的特性&quot;&gt;&lt;a href=&quot;#现代UI开发的特性&quot; class=&quot;headerlink&quot;
+        
+      
+    
+    </summary>
+    
+    
+      <category term="android, jetpack compose" scheme="https://tedaliez.github.io/tags/android-jetpack-compose/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>MMKV源码简析---跨进程</title>
+    <link href="https://tedaliez.github.io/2020/05/04/MMKV%E6%BA%90%E7%A0%81%E7%AE%80%E6%9E%90-%E8%B7%A8%E8%BF%9B%E7%A8%8B/"/>
+    <id>https://tedaliez.github.io/2020/05/04/MMKV源码简析-跨进程/</id>
+    <published>2020-05-04T07:23:07.000Z</published>
+    <updated>2020-05-04T07:25:25.023Z</updated>
+    
+    <summary type="html">
+    
+      
+      
+        
+        
+          &lt;p&gt;MMKV 一个重要特性就是增加了 android 侧对跨进程读写的支持，我们单独用一篇文章来分析一下 MMKV 对跨进程存储的实现方式&lt;br&gt;典型的初始化调用如下:&lt;/p&gt;
+&lt;figure class=&quot;highlight java&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td
+        
+      
+    
+    </summary>
+    
+    
+      <category term="android, mmkv" scheme="https://tedaliez.github.io/tags/android-mmkv/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>MMKV源码简析---读写</title>
+    <link href="https://tedaliez.github.io/2020/05/04/MMKV%E6%BA%90%E7%A0%81%E7%AE%80%E6%9E%90-%E8%AF%BB%E5%86%99/"/>
+    <id>https://tedaliez.github.io/2020/05/04/MMKV源码简析-读写/</id>
+    <published>2020-05-04T07:22:29.000Z</published>
+    <updated>2020-05-04T07:26:23.250Z</updated>
+    
+    <summary type="html">
+    
+      
+      
+        
+        
+          &lt;ul&gt;
+&lt;li&gt;&lt;a href=&quot;#mmkv-%e5%86%99&quot;&gt;MMKV 写&lt;/a&gt;&lt;ul&gt;
+&lt;li&gt;&lt;a href=&quot;#checkloaddata&quot;&gt;checkLoadData()&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a
+        
+      
+    
+    </summary>
+    
+    
+      <category term="android, mmkv" scheme="https://tedaliez.github.io/tags/android-mmkv/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>MMKV源码简析---初始化</title>
+    <link href="https://tedaliez.github.io/2020/05/04/MMKV%E6%BA%90%E7%A0%81%E7%AE%80%E6%9E%90-%E5%88%9D%E5%A7%8B%E5%8C%96/"/>
+    <id>https://tedaliez.github.io/2020/05/04/MMKV源码简析-初始化/</id>
+    <published>2020-05-04T07:21:48.000Z</published>
+    <updated>2020-05-04T07:22:19.985Z</updated>
+    
+    <summary type="html">
+    
+      
+      
+        
+        
+          &lt;ul&gt;
+&lt;li&gt;&lt;a href=&quot;#%e5%88%9d%e5%a7%8b%e5%8c%96&quot;&gt;初始化&lt;/a&gt;&lt;ul&gt;
+&lt;li&gt;&lt;a href=&quot;#mmkvinitialize&quot;&gt;MMKV.initialize&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;a
+        
+      
+    
+    </summary>
+    
+    
+      <category term="android, mmkv" scheme="https://tedaliez.github.io/tags/android-mmkv/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>ROOM数据库分析</title>
+    <link href="https://tedaliez.github.io/2020/03/28/ROOM%E6%95%B0%E6%8D%AE%E5%BA%93%E5%88%86%E6%9E%90/"/>
+    <id>https://tedaliez.github.io/2020/03/28/ROOM数据库分析/</id>
+    <published>2020-03-28T15:08:43.000Z</published>
+    <updated>2020-03-28T15:09:09.230Z</updated>
+    
+    <summary type="html">
+    
+      
+      
+        
+        
+          &lt;p&gt;以 2.1.0 版本源码简单分析下 ROOM，主要针对一些自己的困惑做一些记录&lt;/p&gt;
+&lt;p&gt;为了本文行文方便, 本文的分析全部基于以下的简单的 DB 构造&lt;/p&gt;
+&lt;figure class=&quot;highlight kotlin&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td
+        
+      
+    
+    </summary>
+    
+    
+      <category term="Android, ROOM" scheme="https://tedaliez.github.io/tags/Android-ROOM/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>Android focus概念</title>
+    <link href="https://tedaliez.github.io/2020/02/14/Android-focus%E6%A6%82%E5%BF%B5/"/>
+    <id>https://tedaliez.github.io/2020/02/14/Android-focus概念/</id>
+    <published>2020-02-14T09:52:43.000Z</published>
+    <updated>2020-02-14T09:52:57.146Z</updated>
+    
+    <summary type="html">
+    
+      
+      
+        
+        
+          &lt;h1 id=&quot;Android-focus-相关概念&quot;&gt;&lt;a href=&quot;#Android-focus-相关概念&quot; class=&quot;headerlink&quot; title=&quot;Android focus 相关概念&quot;&gt;&lt;/a&gt;Android focus 相关概念&lt;/h1&gt;&lt;h2
+        
+      
+    
+    </summary>
+    
+    
+      <category term="android" scheme="https://tedaliez.github.io/tags/android/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>Android TextView绘制技巧</title>
+    <link href="https://tedaliez.github.io/2020/01/12/Android-TextView%E7%BB%98%E5%88%B6%E6%8A%80%E5%B7%A7/"/>
+    <id>https://tedaliez.github.io/2020/01/12/Android-TextView绘制技巧/</id>
+    <published>2020-01-12T01:22:37.000Z</published>
+    <updated>2020-01-12T01:23:39.125Z</updated>
+    
+    <summary type="html">
+    
+      
+      
+        
+        
+          &lt;h2 id=&quot;文本绘制概念&quot;&gt;&lt;a href=&quot;#文本绘制概念&quot; class=&quot;headerlink&quot; title=&quot;文本绘制概念&quot;&gt;&lt;/a&gt;文本绘制概念&lt;/h2&gt;&lt;ul&gt;
+&lt;li&gt;Top - The maximum distance above the baseline
+        
+      
+    
+    </summary>
+    
+    
+      <category term="android, textview" scheme="https://tedaliez.github.io/tags/android-textview/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>Kotlin协程浅析</title>
+    <link href="https://tedaliez.github.io/2020/01/05/Kotlin%E5%8D%8F%E7%A8%8B%E6%B5%85%E6%9E%90/"/>
+    <id>https://tedaliez.github.io/2020/01/05/Kotlin协程浅析/</id>
+    <published>2020-01-05T11:00:55.000Z</published>
+    <updated>2020-01-05T11:01:18.875Z</updated>
+    
+    <summary type="html">
+    
+      
+      
+        
+        
+          &lt;p&gt;本文主要参考 KotlinConf 2017 内容来对 Kotlin 中协程的实现进行解析&lt;/p&gt;
+&lt;p&gt;TL;DR;&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;Kotlin的协程本质上仍旧是Callback式的调用,
+        
+      
+    
+    </summary>
+    
+    
+      <category term="kotlin, coroutine" scheme="https://tedaliez.github.io/tags/kotlin-coroutine/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>JSBridge解析</title>
+    <link href="https://tedaliez.github.io/2019/12/21/JSBridge%E8%A7%A3%E6%9E%90/"/>
+    <id>https://tedaliez.github.io/2019/12/21/JSBridge解析/</id>
+    <published>2019-12-21T12:10:53.000Z</published>
+    <updated>2019-12-21T12:11:13.983Z</updated>
+    
+    <summary type="html">
+    
+      
+      
+        
+        
+          &lt;h2 id=&quot;背景&quot;&gt;&lt;a href=&quot;#背景&quot; class=&quot;headerlink&quot; title=&quot;背景&quot;&gt;&lt;/a&gt;背景&lt;/h2&gt;&lt;p&gt;利用 webview 的特性，我们设计一个 jsbridge 来实现 js 和 native
+        
+      
+    
+    </summary>
+    
+    
+      <category term="WebView, JSBridge" scheme="https://tedaliez.github.io/tags/WebView-JSBridge/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>Kotlin协程实战</title>
+    <link href="https://tedaliez.github.io/2019/12/07/Kotlin%E5%8D%8F%E7%A8%8B%E5%AE%9E%E6%88%98/"/>
+    <id>https://tedaliez.github.io/2019/12/07/Kotlin协程实战/</id>
+    <published>2019-12-07T11:49:40.000Z</published>
+    <updated>2019-12-07T11:51:49.068Z</updated>
+    
+    <summary type="html">
+    
+      
+      
+        
+        
+          &lt;ul&gt;
+&lt;li&gt;&lt;a href=&quot;#%e5%ad%a6%e4%b9%a0%e8%b7%af%e5%be%84&quot;&gt;学习路径&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a
+        
+      
+    
+    </summary>
+    
+    
+      <category term="kotlin" scheme="https://tedaliez.github.io/tags/kotlin/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>Android自定义View中一些参数的含义</title>
+    <link href="https://tedaliez.github.io/2019/11/16/Android%E8%87%AA%E5%AE%9A%E4%B9%89View%E4%B8%AD%E4%B8%80%E4%BA%9B%E5%8F%82%E6%95%B0%E7%9A%84%E5%90%AB%E4%B9%89/"/>
+    <id>https://tedaliez.github.io/2019/11/16/Android自定义View中一些参数的含义/</id>
+    <published>2019-11-16T12:31:21.000Z</published>
+    <updated>2019-11-16T12:32:24.413Z</updated>
+    
+    <summary type="html">
+    
+      
+      
+        
+        
+          &lt;ul&gt;
+&lt;li&gt;&lt;a
+        
+      
+    
+    </summary>
+    
+    
+      <category term="android" scheme="https://tedaliez.github.io/tags/android/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>工程效率的一些思考</title>
+    <link href="https://tedaliez.github.io/2019/09/28/%E5%B7%A5%E7%A8%8B%E6%95%88%E7%8E%87%E7%9A%84%E4%B8%80%E4%BA%9B%E6%80%9D%E8%80%83/"/>
+    <id>https://tedaliez.github.io/2019/09/28/工程效率的一些思考/</id>
+    <published>2019-09-28T02:00:25.000Z</published>
+    <updated>2019-09-28T03:23:05.454Z</updated>
+    
+    <summary type="html">
+    
+      
+      
+        
+        
+          &lt;h1 id=&quot;有关工程效率的一些思考&quot;&gt;&lt;a href=&quot;#有关工程效率的一些思考&quot; class=&quot;headerlink&quot;
+        
+      
+    
+    </summary>
+    
+    
+  </entry>
+  
+  <entry>
+    <title>CanvasKit简介</title>
+    <link href="https://tedaliez.github.io/2019/07/14/CanvasKit%E7%AE%80%E4%BB%8B/"/>
+    <id>https://tedaliez.github.io/2019/07/14/CanvasKit简介/</id>
+    <published>2019-07-14T02:08:57.000Z</published>
+    <updated>2019-07-14T02:12:25.989Z</updated>
+    
+    <summary type="html">
+    
+      
+      
+        
+        
+          &lt;ul&gt;
+&lt;li&gt;&lt;a href=&quot;#CanvasKit%E7%AE%80%E4%BB%8B&quot;&gt;CanvasKit简介&lt;/a&gt;&lt;ul&gt;
+&lt;li&gt;&lt;a href=&quot;#%E7%BC%96%E8%AF%91%E5%8E%9F%E7%90%86&quot;&gt;编译原理&lt;/a&gt;&lt;ul&gt;
+&lt;li&gt;&lt;a
+        
+      
+    
+    </summary>
+    
+    
+      <category term="WebAssembly" scheme="https://tedaliez.github.io/tags/WebAssembly/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>APT插件实战</title>
+    <link href="https://tedaliez.github.io/2019/06/29/APT%E6%8F%92%E4%BB%B6%E5%AE%9E%E6%88%98/"/>
+    <id>https://tedaliez.github.io/2019/06/29/APT插件实战/</id>
+    <published>2019-06-29T12:34:53.000Z</published>
+    <updated>2019-06-29T12:41:56.265Z</updated>
+    
+    <summary type="html">
+    
+      
+      
+        
+        
+          &lt;ul&gt;
+&lt;li&gt;&lt;a href=&quot;#Annotation-Processor&quot;&gt;Annotation Processor&lt;/a&gt;&lt;ul&gt;
+&lt;li&gt;&lt;a
+        
+      
+    
+    </summary>
+    
+    
+  </entry>
+  
+</feed>

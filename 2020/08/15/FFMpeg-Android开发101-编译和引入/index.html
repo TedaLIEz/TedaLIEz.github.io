@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+
+  
+  <title>FFMpeg Android开发101-编译和引入 | Aichi_B7A</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="本系列会尝试将FFMpeg引入到android项目中，并借助FFMpeg完成一些音视频的简单饮用；FFMpeg作为一个成熟的音视频编解码工具被大量项目使用，但将FFMpeg引入到Android开发的文档并不多，国内有一部分但大量已经过时，这个系列会重新尝试带领大家完成整个过程。 本文对应的源代码请参考https:&#x2F;&#x2F;github.com&#x2F;TedaLIEz&#x2F;MyFFMpegAndroid&#x2F;tree&#x2F;">
+<meta property="og:type" content="article">
+<meta property="og:title" content="FFMpeg Android开发101-编译和引入">
+<meta property="og:url" content="https://tedaliez.github.io/2020/08/15/FFMpeg-Android%E5%BC%80%E5%8F%91101-%E7%BC%96%E8%AF%91%E5%92%8C%E5%BC%95%E5%85%A5/index.html">
+<meta property="og:site_name" content="Aichi_B7A">
+<meta property="og:description" content="本系列会尝试将FFMpeg引入到android项目中，并借助FFMpeg完成一些音视频的简单饮用；FFMpeg作为一个成熟的音视频编解码工具被大量项目使用，但将FFMpeg引入到Android开发的文档并不多，国内有一部分但大量已经过时，这个系列会重新尝试带领大家完成整个过程。 本文对应的源代码请参考https:&#x2F;&#x2F;github.com&#x2F;TedaLIEz&#x2F;MyFFMpegAndroid&#x2F;tree&#x2F;">
+<meta property="og:locale">
+<meta property="article:published_time" content="2020-08-15T02:15:51.000Z">
+<meta property="article:modified_time" content="2020-08-15T03:25:40.396Z">
+<meta property="article:author" content="Jian Guo">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="/atom.xml" title="Aichi_B7A" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+<meta name="generator" content="Hexo 5.2.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Aichi_B7A</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="https://tedaliez.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-FFMpeg-Android开发101-编译和引入" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2020/08/15/FFMpeg-Android%E5%BC%80%E5%8F%91101-%E7%BC%96%E8%AF%91%E5%92%8C%E5%BC%95%E5%85%A5/" class="article-date">
+  <time datetime="2020-08-15T02:15:51.000Z" itemprop="datePublished">2020-08-15</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      FFMpeg Android开发101-编译和引入
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>本系列会尝试将FFMpeg引入到android项目中，并借助FFMpeg完成一些音视频的简单饮用；FFMpeg作为一个成熟的音视频编解码工具被大量项目使用，但将FFMpeg引入到Android开发的文档并不多，国内有一部分但大量已经过时，这个系列会重新尝试带领大家完成整个过程。</p>
+<p>本文对应的源代码请参考<a href="https://github.com/TedaLIEz/MyFFMpegAndroid/tree/v1.0" target="_blank" rel="noopener">https://github.com/TedaLIEz/MyFFMpegAndroid/tree/v1.0</a></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">git clone https://github.com/TedaLIEz/MyFFMpegAndroid/tree/v1.0</span><br><span class="line"></span><br><span class="line">cd MyFFMpegAndroid</span><br><span class="line">git submodule update</span><br><span class="line"></span><br><span class="line">cd ffmpeg-android-maker</span><br><span class="line">export ANDROID_SDK_HOME=$&#123;YOUR_SDK_HOME&#125;</span><br><span class="line">export ANDROID_NDK_HOME=$&#123;YOUR_NDK_HOME&#125;</span><br><span class="line">./ffmpeg-android-maker.sh</span><br></pre></td></tr></table></figure>
+<p>之后用Android Studio打开项目，即可运行</p>
+<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>总的来说，将FFMpeg引入到Android项目开发分为下面几个步骤：</p>
+<ol>
+<li>使用Android NDK编译FFMpeg项目</li>
+<li>在自己的项目部署FFMpeg</li>
+<li>开始FFMpeg开发，验证效果</li>
+</ol>
+<h3 id="使用Android-NDK编译FFMpeg"><a href="#使用Android-NDK编译FFMpeg" class="headerlink" title="使用Android NDK编译FFMpeg"></a>使用Android NDK编译FFMpeg</h3><pre><code>TL;DR 参考https://github.com/Javernaut/ffmpeg-android-maker
+</code></pre><p>首先需要简单了解些FFMpeg编译产物的一些职责:</p>
+<p><code>libavformat</code>: 处理文件container, stream<br><code>libavcodec</code>: 编解码<br><code>libswscale</code>: 图像处理<br><code>libavutil</code>: util库</p>
+<p>还有一些其他的库，可以自行参考FFmpeg文档</p>
+<p>考虑到我们是编译一个Android的FFMpeg库，本质上这就是一个交叉编译，因此我简单介绍一下FFmpeg编译到Android上的一些配置</p>
+<h4 id="编译配置"><a href="#编译配置" class="headerlink" title="编译配置"></a>编译配置</h4><p>由于Android有着ARM, x86的32，64位处理器架构，因此我们需要编译4种二进制文件；这时需要一个交叉编译器(cross-compiler)来帮我们处理问题。</p>
+<p>第二，编译过程不只是compile，还包括链接(linker)等其他工具, 我们统称为binutils</p>
+<p>第三，我们需要Android系统自己的一些库和头文件，这些文件的存储位置我们成为sysroot</p>
+<p>因此，整个编译需要的工具链包括<code>cross-compiler</code>, <code>binutils</code>, <code>sysroot</code></p>
+<p>那么我们怎么获得这些工具呢？答案显然就是在Android NDK中，如果之前你有查阅过Android-NDK的目录，那么你就会发现NDK的结构其实已经说明了这三个工具的划分</p>
+<p>这里我们看一下configure的相关参数</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">./configure \</span><br><span class="line">--prefix=<span class="variable">$&#123;BUILD_DIR&#125;</span>/<span class="variable">$&#123;ABI&#125;</span> \</span><br><span class="line">--<span class="built_in">enable</span>-cross-compile \</span><br><span class="line">--target-os=android \</span><br><span class="line">--arch=<span class="variable">$&#123;TARGET_TRIPLE_MACHINE_BINUTILS&#125;</span> \</span><br><span class="line">--sysroot=<span class="variable">$&#123;SYSROOT&#125;</span> \</span><br><span class="line">--cross-prefix=<span class="variable">$&#123;CROSS_PREFIX&#125;</span> \</span><br><span class="line">--cc=<span class="variable">$&#123;CC&#125;</span> \</span><br><span class="line">--extra-cflags=<span class="string">"-O3 -fPIC"</span> \</span><br><span class="line">--<span class="built_in">enable</span>-shared \</span><br><span class="line">--<span class="built_in">disable</span>-static \</span><br><span class="line"><span class="variable">$&#123;EXTRA_BUILD_CONFIGURATION_FLAGS&#125;</span> \</span><br></pre></td></tr></table></figure>
+<p><code>prefix</code>指明了产物的路径</p>
+<p><code>target-os=android</code>: 指明我们的编译操作系统是Android</p>
+<p><code>--arch=${TARGET_TRIPLE_MACHINE_BINUTILS}</code>: 指明arm, aarch64, i686 and x86_64</p>
+<p><code>--sysroot=${SYSROOT}</code>: 指明sysroot的路径，这个路径一定是在Android NDK的路径下的一个子目录</p>
+<p><code>--cross-prefix=${CROSS_PREFIX}</code>: 指明binutils的工具名前缀，这个名字会追加到ld前当作linker使用，例如</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">armeabi-v7a: $TOOLCHAIN_PATH/bin/arm-linux-androideabi-</span><br><span class="line">arm64-v8a:   $TOOLCHAIN_PATH/bin/aarch64-linux-android-</span><br><span class="line">x86:         $TOOLCHAIN_PATH/bin/i686-linux-android-</span><br><span class="line">x86_64:      $TOOLCHAIN_PATH/bin/x86_64-linux-android-</span><br></pre></td></tr></table></figure>
+<p><code>--cc=${CC}</code>: 指明编译器, 例如</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">armeabi-v7a: $TOOLCHAIN_PATH/bin/armv7a-linux-androideabi16-clang</span><br><span class="line">arm64-v8a:   $TOOLCHAIN_PATH/bin/aarch64-linux-android21-clang</span><br><span class="line">x86:         $TOOLCHAIN_PATH/bin/i686-linux-android16-clang</span><br><span class="line">x86_64:      $TOOLCHAIN_PATH/bin/x86_64-linux-android21-clang</span><br></pre></td></tr></table></figure>
+<p><code>--enable-shard</code>和<code>--disable-static</code>表明我们是编译一个动态库</p>
+<p><code>--extra-cflags=”-O3 -fPIC”</code>表明了其他的C flag, <code>-O3</code>表明编译器优化级别, <code>-fPIC</code>是编译Android上的动态库必须的参数</p>
+<h4 id="FFMpeg自身的相关配置"><a href="#FFMpeg自身的相关配置" class="headerlink" title="FFMpeg自身的相关配置"></a>FFMpeg自身的相关配置</h4><p>除去上面编译工具链需要的参数外，我们还可以定制化我们的FFMpeg编译，例如:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">--disable-runtime-cpudetect \</span><br><span class="line">--disable-programs \</span><br><span class="line">--disable-muxers \</span><br><span class="line">--disable-encoders \</span><br><span class="line">--disable-avdevice \</span><br><span class="line">--disable-postproc \</span><br><span class="line">--disable-swresample \</span><br><span class="line">--disable-avfilter \</span><br><span class="line">--disable-doc \</span><br><span class="line">--disable-debug \</span><br><span class="line">--disable-pthreads \</span><br><span class="line">--disable-network \</span><br><span class="line">--disable-bsfs \</span><br><span class="line">--disable-decoders \</span><br><span class="line">$&#123;DECODERS_TO_ENABLE&#125;</span><br></pre></td></tr></table></figure>
+<p>这里<code>--disable</code>-xxx表示不需要FFMpeg的具体模块，这个可以根据自身app的开发来定制</p>
+<p>上述工作全部完成后，就可以开始make &amp;&amp; make install了</p>
+<h3 id="在Android项目中引入FFmpeg"><a href="#在Android项目中引入FFmpeg" class="headerlink" title="在Android项目中引入FFmpeg"></a>在Android项目中引入FFmpeg</h3><p>编译完成后，你应该能获得如下的编译结果</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">.</span><br><span class="line">├── include</span><br><span class="line">│   ├── arm64-v8a</span><br><span class="line">│   ├── armeabi-v7a</span><br><span class="line">│   ├── x86</span><br><span class="line">│   └── x86_64</span><br><span class="line">└── lib</span><br><span class="line">    ├── arm64-v8a</span><br><span class="line">    ├── armeabi-v7a</span><br><span class="line">    ├── x86</span><br><span class="line">    └── x86_64</span><br></pre></td></tr></table></figure>
+<p>下一步就是引入到Android项目中了，首先在你的app/build.gradle中作如下修改</p>
+<figure class="highlight groovy"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">android &#123;</span><br><span class="line">    ...</span><br><span class="line">    defaultConfig &#123;</span><br><span class="line">        ...</span><br><span class="line">        ndk &#123;</span><br><span class="line">            abiFilters <span class="string">'x86'</span>, <span class="string">'x86_64'</span>, <span class="string">'armeabi-v7a'</span>, <span class="string">'arm64-v8a'</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    sourceSets &#123;</span><br><span class="line">        main &#123;</span><br><span class="line">            <span class="comment">// let gradle pack the shared library into the apk</span></span><br><span class="line">            jniLibs.srcDirs = [<span class="string">'../ffmpeg-android-maker/output/lib'</span>]</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    externalNativeBuild &#123;</span><br><span class="line">        cmake &#123;</span><br><span class="line">            path <span class="string">"CMakeLists.txt"</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>分别解释一下:</p>
+<p><code>abiFilters</code>: 指定了app支持的架构</p>
+<p><code>jniLibs.srcDirs</code>: 指定了app需要的动态库路径，android编译时会自动将这里指定的动态库打包进apk</p>
+<p><code>externalNativeBuild</code>这里指定了我们的<code>CMakeLists.txt</code>路径</p>
+<p>下一步就是配置CMakeLists</p>
+<figure class="highlight cmake"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">cmake_minimum_required</span>(VERSION <span class="number">3.4</span>.<span class="number">1</span>)  <span class="comment"># 指定Cmake最低版本</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">set</span>(ffmpeg_dir <span class="variable">$&#123;CMAKE_SOURCE_DIR&#125;</span>/../ffmpeg-android-maker/output)  <span class="comment"># 设置ffmpeg_dir变量</span></span><br><span class="line"><span class="keyword">include_directories</span>(<span class="variable">$&#123;ffmpeg_dir&#125;</span>/<span class="keyword">include</span>/<span class="variable">$&#123;ANDROID_ABI&#125;</span>)  <span class="comment"># 设置需要include的头文件路径，注意这里的ANDROID_ABI代表了在gradle中指定的abiFilters的每一个变量</span></span><br><span class="line"><span class="keyword">set</span>(ffmpeg_libs <span class="variable">$&#123;ffmpeg_dir&#125;</span>/lib/<span class="variable">$&#123;ANDROID_ABI&#125;</span>) <span class="comment"># 设置ffmpeg_libs变量，指明shared library路径</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">add_library</span>(avutil SHARED IMPORTED) <span class="comment"># 声明avutil库</span></span><br><span class="line"><span class="keyword">set_target_properties</span>(avutil PROPERTIES IMPORTED_LOCATION <span class="variable">$&#123;ffmpeg_libs&#125;</span>/libavutil.so) <span class="comment"># 指定avutil库shared library路径</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">add_library</span>(avformat SHARED IMPORTED) <span class="comment"># 类似上面的声明</span></span><br><span class="line"><span class="keyword">set_target_properties</span>(avformat PROPERTIES IMPORTED_LOCATION <span class="variable">$&#123;ffmpeg_libs&#125;</span>/libavformat.so)</span><br><span class="line"></span><br><span class="line"><span class="keyword">add_library</span>(avfilter SHARED IMPORTED)</span><br><span class="line"><span class="keyword">set_target_properties</span>(avfilter PROPERTIES IMPORTED_LOCATION <span class="variable">$&#123;ffmpeg_libs&#125;</span>/libavfilter.so)</span><br><span class="line"></span><br><span class="line"><span class="keyword">add_library</span>(avcodec SHARED IMPORTED)</span><br><span class="line"><span class="keyword">set_target_properties</span>(avcodec PROPERTIES IMPORTED_LOCATION <span class="variable">$&#123;ffmpeg_libs&#125;</span>/libavcodec.so)</span><br><span class="line"></span><br><span class="line"><span class="keyword">add_library</span>(swscale SHARED IMPORTED)</span><br><span class="line"><span class="keyword">set_target_properties</span>(swscale PROPERTIES IMPORTED_LOCATION <span class="variable">$&#123;ffmpeg_libs&#125;</span>/libswscale.so)</span><br><span class="line"></span><br><span class="line"><span class="keyword">add_library</span>(swresample SHARED IMPORTED)</span><br><span class="line"><span class="keyword">set_target_properties</span>(swresample PROPERTIES IMPORTED_LOCATION <span class="variable">$&#123;ffmpeg_libs&#125;</span>/libswresample.so)</span><br><span class="line"></span><br><span class="line"><span class="keyword">find_library</span>(log-lib log) <span class="comment"># 使用Android 的native log库，命名为log-lib</span></span><br><span class="line"><span class="keyword">find_library</span>(jnigraphics-lib jnigraphics) <span class="comment"># 同上，使用jnigraphics</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">add_library</span>(test_ffmpeg</span><br><span class="line">        SHARED</span><br><span class="line">        src/main/cpp/video_config.cpp</span><br><span class="line">        src/main/cpp/video_config_jni.cpp</span><br><span class="line">        src/main/cpp/utils.cpp</span><br><span class="line">        src/main/cpp/main.cpp</span><br><span class="line">        src/main/cpp/player.cpp)  <span class="comment"># 添加我们自己项目中的代码，并命名为test_ffmpeg库</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">target_link_libraries</span>(</span><br><span class="line">        test_ffmpeg</span><br><span class="line">        <span class="variable">$&#123;log-lib&#125;</span></span><br><span class="line">        <span class="variable">$&#123;jnigraphics-lib&#125;</span></span><br><span class="line">        android</span><br><span class="line">        avformat</span><br><span class="line">        avcodec</span><br><span class="line">        swscale</span><br><span class="line">        avutil</span><br><span class="line">        swresample</span><br><span class="line">        avfilter) <span class="comment"># 通知linker将上述所有library链接</span></span><br></pre></td></tr></table></figure>
+<p>具体含义已经在注释中</p>
+<p>全部配置完成后，可以尝试进行编译；剩下的问题就是JNI相关的知识和Android自身的相关开发知识了，本文就不再赘述。需要注意的一个小点就是在Java层System.loadLibrary时需要注意加载顺序</p>
+<figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">init</span> &#123;</span><br><span class="line">        listOf(<span class="string">"avutil"</span>, <span class="string">"avcodec"</span>, <span class="string">"avformat"</span>, <span class="string">"swscale"</span>, <span class="string">"test_ffmpeg"</span>).forEach &#123;</span><br><span class="line">            System.loadLibrary(it)</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>之后运行app，如果没有出现crash，就基本证明我们的引入是ok的了。Have Fun！</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://tedaliez.github.io/2020/08/15/FFMpeg-Android%E5%BC%80%E5%8F%91101-%E7%BC%96%E8%AF%91%E5%92%8C%E5%BC%95%E5%85%A5/" data-id="ckgx4rr7d000ei8x7ifypegqv" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2020/08/22/FFMpeg-Android%E5%BC%80%E5%8F%91-%E8%A7%A3%E6%9E%90%E8%A7%86%E9%A2%91%E6%A0%BC%E5%BC%8F/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          FFMpeg-Android开发-解析视频格式
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2020/07/25/Jetpack-Compose%E7%AE%80%E4%BB%8B%E4%B8%8E%E6%80%9D%E8%80%83/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">Jetpack Compose简介与思考</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/Android-ROOM/" rel="tag">Android, ROOM</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/NDK/" rel="tag">NDK</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/TypeScript/" rel="tag">TypeScript</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/WebAssembly/" rel="tag">WebAssembly</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/WebView-JSBridge/" rel="tag">WebView, JSBridge</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/android/" rel="tag">android</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/android-jetpack-compose/" rel="tag">android, jetpack compose</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/android-mmkv/" rel="tag">android, mmkv</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/android-textview/" rel="tag">android, textview</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/kotlin/" rel="tag">kotlin</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/kotlin-coroutine/" rel="tag">kotlin, coroutine</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/kotlin-%E5%8D%8F%E7%A8%8B/" rel="tag">kotlin, 协程</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/v8-WebAssembly/" rel="tag">v8, WebAssembly</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/Android-ROOM/" style="font-size: 10px;">Android, ROOM</a> <a href="/tags/NDK/" style="font-size: 10px;">NDK</a> <a href="/tags/TypeScript/" style="font-size: 10px;">TypeScript</a> <a href="/tags/WebAssembly/" style="font-size: 15px;">WebAssembly</a> <a href="/tags/WebView-JSBridge/" style="font-size: 10px;">WebView, JSBridge</a> <a href="/tags/android/" style="font-size: 15px;">android</a> <a href="/tags/android-jetpack-compose/" style="font-size: 10px;">android, jetpack compose</a> <a href="/tags/android-mmkv/" style="font-size: 20px;">android, mmkv</a> <a href="/tags/android-textview/" style="font-size: 10px;">android, textview</a> <a href="/tags/kotlin/" style="font-size: 10px;">kotlin</a> <a href="/tags/kotlin-coroutine/" style="font-size: 10px;">kotlin, coroutine</a> <a href="/tags/kotlin-%E5%8D%8F%E7%A8%8B/" style="font-size: 10px;">kotlin, 协程</a> <a href="/tags/v8-WebAssembly/" style="font-size: 10px;">v8, WebAssembly</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/09/">September 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/08/">August 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/07/">July 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/05/">May 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/03/">March 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/02/">February 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/01/">January 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/12/">December 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/11/">November 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/09/">September 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/07/">July 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/06/">June 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/05/">May 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/03/">March 2019</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2020/09/13/FFMpeg-Android%E5%BC%80%E5%8F%91-%E7%AE%80%E5%8D%95%E9%9F%B3%E8%A7%86%E9%A2%91%E5%90%8C%E6%AD%A5/">FFMpeg-Android开发-简单音视频同步</a>
+          </li>
+        
+          <li>
+            <a href="/2020/09/12/Kotlin%E5%8D%8F%E7%A8%8B%E5%BC%82%E5%B8%B8%E5%A4%84%E7%90%86/">Kotlin协程异常处理</a>
+          </li>
+        
+          <li>
+            <a href="/2020/08/29/FFMpeg-Android%E5%BC%80%E5%8F%91-%E7%AE%80%E5%8D%95%E6%92%AD%E6%94%BE%E9%9F%B3%E9%A2%91/">FFMpeg-Android开发-简单播放音频</a>
+          </li>
+        
+          <li>
+            <a href="/2020/08/23/FFMpeg-Android%E5%BC%80%E5%8F%91-%E7%AE%80%E5%8D%95%E6%92%AD%E6%94%BE%E8%A7%86%E9%A2%91/">FFMpeg-Android开发-简单播放视频</a>
+          </li>
+        
+          <li>
+            <a href="/2020/08/22/FFMpeg-Android%E5%BC%80%E5%8F%91-%E8%A7%A3%E6%9E%90%E8%A7%86%E9%A2%91%E6%A0%BC%E5%BC%8F/">FFMpeg-Android开发-解析视频格式</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2020 Jian Guo<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+  </div>
+</body>
+</html>

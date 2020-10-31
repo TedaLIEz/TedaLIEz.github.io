@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+
+  
+  <title>v8执行WebAssembly遇到的问题和解决方法 | Aichi_B7A</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="问题的简单分析  查阅d8.cc SourceGroup::Execute 简单分析 CompleteMessageLoop 分析   解决方案    最近在 7.2 分支上做一些 WebAssembly 能力的验证, 但是发现了一些奇怪的现象, 具体的问题描述可以参考https:&#x2F;&#x2F;stackoverflow.com&#x2F;questions&#x2F;56428990&#x2F;webassembly-instant">
+<meta property="og:type" content="article">
+<meta property="og:title" content="v8执行WebAssembly遇到的问题和解决方法">
+<meta property="og:url" content="https://tedaliez.github.io/2019/06/06/v8%E6%89%A7%E8%A1%8CWebAssembly%E9%81%87%E5%88%B0%E7%9A%84%E9%97%AE%E9%A2%98%E5%92%8C%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95/index.html">
+<meta property="og:site_name" content="Aichi_B7A">
+<meta property="og:description" content="问题的简单分析  查阅d8.cc SourceGroup::Execute 简单分析 CompleteMessageLoop 分析   解决方案    最近在 7.2 分支上做一些 WebAssembly 能力的验证, 但是发现了一些奇怪的现象, 具体的问题描述可以参考https:&#x2F;&#x2F;stackoverflow.com&#x2F;questions&#x2F;56428990&#x2F;webassembly-instant">
+<meta property="og:locale">
+<meta property="og:image" content="https://tedaliez.github.io/2019/06/06/v8执行WebAssembly遇到的问题和解决方法/v8_WASM_1.jpg">
+<meta property="article:published_time" content="2019-06-06T11:20:44.000Z">
+<meta property="article:modified_time" content="2020-01-12T01:23:31.389Z">
+<meta property="article:author" content="Jian Guo">
+<meta property="article:tag" content="v8, WebAssembly">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://tedaliez.github.io/2019/06/06/v8执行WebAssembly遇到的问题和解决方法/v8_WASM_1.jpg">
+  
+    <link rel="alternate" href="/atom.xml" title="Aichi_B7A" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+<meta name="generator" content="Hexo 5.2.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Aichi_B7A</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="https://tedaliez.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-v8执行WebAssembly遇到的问题和解决方法" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2019/06/06/v8%E6%89%A7%E8%A1%8CWebAssembly%E9%81%87%E5%88%B0%E7%9A%84%E9%97%AE%E9%A2%98%E5%92%8C%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95/" class="article-date">
+  <time datetime="2019-06-06T11:20:44.000Z" itemprop="datePublished">2019-06-06</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      v8执行WebAssembly遇到的问题和解决方法
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <ul>
+<li><p><a href="#%e9%97%ae%e9%a2%98%e7%9a%84%e7%ae%80%e5%8d%95%e5%88%86%e6%9e%90">问题的简单分析</a></p>
+<ul>
+<li><a href="#%e6%9f%a5%e9%98%85d8cc">查阅<code>d8.cc</code></a><ul>
+<li><a href="#sourcegroupexecute%e7%ae%80%e5%8d%95%e5%88%86%e6%9e%90">SourceGroup::Execute 简单分析</a></li>
+<li><a href="#completemessageloop%e5%88%86%e6%9e%90">CompleteMessageLoop 分析</a></li>
+</ul>
+</li>
+<li><a href="#%e8%a7%a3%e5%86%b3%e6%96%b9%e6%a1%88">解决方案</a></li>
+</ul>
+</li>
+</ul>
+<p>最近在 7.2 分支上做一些 WebAssembly 能力的验证, 但是发现了一些奇怪的现象, 具体的问题描述可以参考<a href="https://stackoverflow.com/questions/56428990/webassembly-instantiate-didnt-call-then-nor-catch-in-v8-embedded" target="_blank" rel="noopener">https://stackoverflow.com/questions/56428990/webassembly-instantiate-didnt-call-then-nor-catch-in-v8-embedded</a></p>
+<p>简单来说,</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br></pre></td><td class="code"><pre><span class="line">WebAssembly.instantiate(</span><br><span class="line">  <span class="keyword">new</span> <span class="built_in">Uint8Array</span>([</span><br><span class="line">    <span class="number">0</span>,</span><br><span class="line">    <span class="number">97</span>,</span><br><span class="line">    <span class="number">115</span>,</span><br><span class="line">    <span class="number">109</span>,</span><br><span class="line">    <span class="number">1</span>,</span><br><span class="line">    <span class="number">0</span>,</span><br><span class="line">    <span class="number">0</span>,</span><br><span class="line">    <span class="number">0</span>,</span><br><span class="line">    <span class="number">1</span>,</span><br><span class="line">    <span class="number">8</span>,</span><br><span class="line">    <span class="number">2</span>,</span><br><span class="line">    <span class="number">96</span>,</span><br><span class="line">    <span class="number">1</span>,</span><br><span class="line">    <span class="number">127</span>,</span><br><span class="line">    <span class="number">0</span>,</span><br><span class="line">    <span class="number">96</span>,</span><br><span class="line">    <span class="number">0</span>,</span><br><span class="line">    <span class="number">0</span>,</span><br><span class="line">    <span class="number">2</span>,</span><br><span class="line">    <span class="number">8</span>,</span><br><span class="line">    <span class="number">1</span>,</span><br><span class="line">    <span class="number">2</span>,</span><br><span class="line">    <span class="number">106</span>,</span><br><span class="line">    <span class="number">115</span>,</span><br><span class="line">    <span class="number">1</span>,</span><br><span class="line">    <span class="number">95</span>,</span><br><span class="line">    <span class="number">0</span>,</span><br><span class="line">    <span class="number">0</span>,</span><br><span class="line">    <span class="number">3</span>,</span><br><span class="line">    <span class="number">2</span>,</span><br><span class="line">    <span class="number">1</span>,</span><br><span class="line">    <span class="number">1</span>,</span><br><span class="line">    <span class="number">8</span>,</span><br><span class="line">    <span class="number">1</span>,</span><br><span class="line">    <span class="number">1</span>,</span><br><span class="line">    <span class="number">10</span>,</span><br><span class="line">    <span class="number">9</span>,</span><br><span class="line">    <span class="number">1</span>,</span><br><span class="line">    <span class="number">7</span>,</span><br><span class="line">    <span class="number">0</span>,</span><br><span class="line">    <span class="number">65</span>,</span><br><span class="line">    <span class="number">185</span>,</span><br><span class="line">    <span class="number">10</span>,</span><br><span class="line">    <span class="number">16</span>,</span><br><span class="line">    <span class="number">0</span>,</span><br><span class="line">    <span class="number">11</span></span><br><span class="line">  ]),</span><br><span class="line">  &#123;</span><br><span class="line">    js: &#123;</span><br><span class="line">      _: <span class="built_in">console</span>.log(<span class="string">"Called from WebAssembly Hello world"</span>)</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">)</span><br><span class="line">  .then(<span class="function"><span class="keyword">function</span>(<span class="params">obj</span>) </span>&#123;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="string">"Called with instance "</span> + obj);</span><br><span class="line">  &#125;)</span><br><span class="line">  .catch(<span class="function"><span class="keyword">function</span>(<span class="params">err</span>) </span>&#123;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="string">"Called with error "</span> + err);</span><br><span class="line">  &#125;);</span><br></pre></td></tr></table></figure>
+<p>上面这段代码既没有执行 then 函数, 又没有执行 catch 函数, 明显不符合 Web API 的预期.</p>
+<h2 id="问题的简单分析"><a href="#问题的简单分析" class="headerlink" title="问题的简单分析"></a>问题的简单分析</h2><p>为了分析这个问题, 我尝试在我自己编译的 d8 中执行上面这段脚本, d8 是 v8 编译时默认生成的一个可交互 JS 运行环境, 简单理解就是一个 JS 的 REPL<br><img src="/2019/06/06/v8执行WebAssembly遇到的问题和解决方法/v8_WASM_1.jpg"></p>
+<p>很神奇, 我居然之后的 REPL 中获得了 catch 的调用, 也就是说 d8 一次执行结束后也没有返回 Promise 的 resolve 或者 reject. 那么这里就需要查查 d8 实现的方式了</p>
+<h3 id="查阅d8-cc"><a href="#查阅d8-cc" class="headerlink" title="查阅d8.cc"></a>查阅<code>d8.cc</code></h3><p>直接来到<code>src/d8.cc</code>, 来到最关键的函数<code>Shell::Main</code></p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">int</span> Shell::RunMain(Isolate* isolate, <span class="keyword">int</span> argc, <span class="keyword">char</span>* argv[], <span class="keyword">bool</span> last_run) &#123;</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt; options.num_isolates; ++i) &#123;</span><br><span class="line">    options.isolate_sources[i].StartExecuteInThread();</span><br><span class="line">  &#125;</span><br><span class="line">  &#123;</span><br><span class="line">    SetWaitUntilDone(isolate, <span class="literal">false</span>);</span><br><span class="line">    <span class="keyword">if</span> (options.lcov_file) &#123;</span><br><span class="line">      debug::Coverage::SelectMode(isolate, debug::Coverage::kBlockCount);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function">HandleScope <span class="title">scope</span><span class="params">(isolate)</span></span>;</span><br><span class="line">    Local&lt;Context&gt; context = CreateEvaluationContext(isolate);</span><br><span class="line">    <span class="keyword">bool</span> use_existing_context = last_run &amp;&amp; use_interactive_shell();</span><br><span class="line">    <span class="keyword">if</span> (use_existing_context) &#123;</span><br><span class="line">      <span class="comment">// Keep using the same context in the interactive shell.</span></span><br><span class="line">      evaluation_context_.Reset(isolate, context);</span><br><span class="line">    &#125;</span><br><span class="line">    &#123;</span><br><span class="line">      Context::<span class="function">Scope <span class="title">cscope</span><span class="params">(context)</span></span>;</span><br><span class="line">      <span class="function">InspectorClient <span class="title">inspector_client</span><span class="params">(context, options.enable_inspector)</span></span>;</span><br><span class="line">      PerIsolateData::<span class="function">RealmScope <span class="title">realm_scope</span><span class="params">(PerIsolateData::Get(isolate))</span></span>;</span><br><span class="line">      options.isolate_sources[<span class="number">0</span>].Execute(isolate);  <span class="comment">// 关键</span></span><br><span class="line">      CompleteMessageLoop(isolate);   <span class="comment">// 关键</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (!use_existing_context) &#123;</span><br><span class="line">      DisposeModuleEmbedderData(context);</span><br><span class="line">    &#125;</span><br><span class="line">    WriteLcovData(isolate, options.lcov_file);</span><br><span class="line">  &#125;</span><br><span class="line">  CollectGarbage(isolate);</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt; options.num_isolates; ++i) &#123;</span><br><span class="line">    <span class="keyword">if</span> (last_run) &#123;</span><br><span class="line">      options.isolate_sources[i].JoinThread();</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      options.isolate_sources[i].WaitForThread();</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  CleanupWorkers();</span><br><span class="line">  <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>关键看这两行:</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">options.isolate_sources[<span class="number">0</span>].Execute(isolate);  <span class="comment">// 关键</span></span><br><span class="line">CompleteMessageLoop(isolate);   <span class="comment">// 关键</span></span><br></pre></td></tr></table></figure>
+<p>options.isolate_sources[0]实际上是一个 SourceGroup 对象</p>
+<h4 id="SourceGroup-Execute-简单分析"><a href="#SourceGroup-Execute-简单分析" class="headerlink" title="SourceGroup::Execute 简单分析"></a>SourceGroup::Execute 简单分析</h4><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">void</span> SourceGroup::Execute(Isolate* isolate) &#123;</span><br><span class="line">  <span class="keyword">bool</span> exception_was_thrown = <span class="literal">false</span>;</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = begin_offset_; i &lt; end_offset_; ++i) &#123;</span><br><span class="line">    <span class="comment">// 参数检查, 这里略去</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// Use all other arguments as names of files to load and run.</span></span><br><span class="line">    <span class="function">HandleScope <span class="title">handle_scope</span><span class="params">(isolate)</span></span>;</span><br><span class="line">    Local&lt;String&gt; file_name =</span><br><span class="line">        String::NewFromUtf8(isolate, arg, NewStringType::kNormal)</span><br><span class="line">            .ToLocalChecked();</span><br><span class="line">    Local&lt;String&gt; source = ReadFile(isolate, arg);</span><br><span class="line">    <span class="keyword">if</span> (source.IsEmpty()) &#123;</span><br><span class="line">      <span class="built_in">printf</span>(<span class="string">"Error reading '%s'\n"</span>, arg);</span><br><span class="line">      base::OS::ExitProcess(<span class="number">1</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    Shell::set_script_executed();</span><br><span class="line">    <span class="keyword">if</span> (!Shell::ExecuteString(isolate, source, file_name, Shell::kNoPrintResult,</span><br><span class="line">                              Shell::kReportExceptions,</span><br><span class="line">                              Shell::kProcessMessageQueue)) &#123;  <span class="comment">// 关键</span></span><br><span class="line">      exception_was_thrown = <span class="literal">true</span>;</span><br><span class="line">      <span class="keyword">break</span>;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">if</span> (exception_was_thrown != Shell::options.expected_to_throw) &#123;</span><br><span class="line">    base::OS::ExitProcess(<span class="number">1</span>);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>再进去看<code>Shell::ExecuteString</code></p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">bool</span> Shell::ExecuteString(Isolate* isolate, Local&lt;String&gt; source,</span><br><span class="line">                          Local&lt;Value&gt; name, PrintResult print_result,</span><br><span class="line">                          ReportExceptions report_exceptions,</span><br><span class="line">                          ProcessMessageQueue process_message_queue) &#123;</span><br><span class="line">  <span class="function">HandleScope <span class="title">handle_scope</span><span class="params">(isolate)</span></span>;</span><br><span class="line">  <span class="function">TryCatch <span class="title">try_catch</span><span class="params">(isolate)</span></span>;</span><br><span class="line">  try_catch.SetVerbose(<span class="literal">true</span>);</span><br><span class="line"></span><br><span class="line">  MaybeLocal&lt;Value&gt; maybe_result;</span><br><span class="line">  <span class="keyword">bool</span> success = <span class="literal">true</span>;</span><br><span class="line">  &#123;</span><br><span class="line">    PerIsolateData* data = PerIsolateData::Get(isolate);</span><br><span class="line">    Local&lt;Context&gt; realm =</span><br><span class="line">        Local&lt;Context&gt;::New(isolate, data-&gt;realms_[data-&gt;realm_current_]);</span><br><span class="line">    Context::<span class="function">Scope <span class="title">context_scope</span><span class="params">(realm)</span></span>;</span><br><span class="line">    MaybeLocal&lt;Script&gt; maybe_script;</span><br><span class="line">    Local&lt;Context&gt; context(isolate-&gt;GetCurrentContext());</span><br><span class="line">    <span class="function">ScriptOrigin <span class="title">origin</span><span class="params">(name)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">//  部分代码略去</span></span><br><span class="line"></span><br><span class="line">    Local&lt;Script&gt; script;</span><br><span class="line">    <span class="keyword">if</span> (!maybe_script.ToLocal(&amp;script)) &#123;</span><br><span class="line">      <span class="comment">// Print errors that happened during compilation.</span></span><br><span class="line">      <span class="keyword">if</span> (report_exceptions) ReportException(isolate, &amp;try_catch);</span><br><span class="line">      <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 部分代码略去</span></span><br><span class="line">    maybe_result = script-&gt;Run(realm);</span><br><span class="line">    <span class="keyword">if</span> (options.code_cache_options ==</span><br><span class="line">        ShellOptions::CodeCacheOptions::kProduceCacheAfterExecute) &#123;</span><br><span class="line">      <span class="comment">// Serialize and store it in memory for the next execution.</span></span><br><span class="line">      ScriptCompiler::CachedData* cached_data =</span><br><span class="line">          ScriptCompiler::CreateCodeCache(script-&gt;GetUnboundScript());</span><br><span class="line">      StoreInCodeCache(isolate, source, cached_data);</span><br><span class="line">      <span class="keyword">delete</span> cached_data;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (process_message_queue &amp;&amp; !EmptyMessageQueues(isolate)) success = <span class="literal">false</span>;  <span class="comment">// 关键</span></span><br><span class="line">    data-&gt;realm_current_ = data-&gt;realm_switch_;</span><br><span class="line">  &#125;</span><br><span class="line">  Local&lt;Value&gt; result;</span><br><span class="line">  <span class="keyword">if</span> (!maybe_result.ToLocal(&amp;result)) &#123;</span><br><span class="line">    DCHECK(try_catch.HasCaught());</span><br><span class="line">    <span class="comment">// Print errors that happened during execution.</span></span><br><span class="line">    <span class="keyword">if</span> (report_exceptions) ReportException(isolate, &amp;try_catch);</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  DCHECK(!try_catch.HasCaught());</span><br><span class="line">  <span class="keyword">if</span> (print_result) &#123;</span><br><span class="line">    <span class="keyword">if</span> (options.test_shell) &#123;</span><br><span class="line">      <span class="keyword">if</span> (!result-&gt;IsUndefined()) &#123;</span><br><span class="line">        <span class="comment">// If all went well and the result wasn't undefined then print</span></span><br><span class="line">        <span class="comment">// the returned value.</span></span><br><span class="line">        v8::String::<span class="function">Utf8Value <span class="title">str</span><span class="params">(isolate, result)</span></span>;</span><br><span class="line">        fwrite(*str, <span class="keyword">sizeof</span>(**str), str.length(), <span class="built_in">stdout</span>);</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">"\n"</span>);</span><br><span class="line">      &#125;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      v8::String::Utf8Value str(isolate, Stringify(isolate, result));</span><br><span class="line">      fwrite(*str, <span class="keyword">sizeof</span>(**str), str.length(), <span class="built_in">stdout</span>);</span><br><span class="line">      <span class="built_in">printf</span>(<span class="string">"\n"</span>);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> success;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>看着就跟官方 demo 里面执行 hello world 差不多, 但是其中的一行有点令人在意.</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (process_message_queue &amp;&amp; !EmptyMessageQueues(isolate)) success = <span class="literal">false</span>;</span><br></pre></td></tr></table></figure>
+<p>这个 EmptyMessageQueues 是什么意思?</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">bool</span> Shell::EmptyMessageQueues(Isolate* isolate) &#123;</span><br><span class="line">  <span class="keyword">return</span> ProcessMessages(</span><br><span class="line">      isolate, []() &#123; <span class="keyword">return</span> platform::MessageLoopBehavior::kDoNotWait; &#125;);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">bool</span> <span class="title">ProcessMessages</span><span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params">    Isolate* isolate,</span></span></span><br><span class="line"><span class="function"><span class="params">    <span class="keyword">const</span> <span class="built_in">std</span>::function&lt;platform::MessageLoopBehavior()&gt;&amp; behavior)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">while</span> (<span class="literal">true</span>) &#123;</span><br><span class="line">    i::Isolate* i_isolate = <span class="keyword">reinterpret_cast</span>&lt;i::Isolate*&gt;(isolate);</span><br><span class="line">    i::<span class="function">SaveContext <span class="title">saved_context</span><span class="params">(i_isolate)</span></span>;</span><br><span class="line">    i_isolate-&gt;set_context(i::Context());</span><br><span class="line">    <span class="function">SealHandleScope <span class="title">shs</span><span class="params">(isolate)</span></span>;</span><br><span class="line">    <span class="keyword">while</span> (v8::platform::PumpMessageLoop(g_default_platform, isolate,</span><br><span class="line">                                         behavior())) &#123;</span><br><span class="line">      isolate-&gt;RunMicrotasks();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (g_default_platform-&gt;IdleTasksEnabled(isolate)) &#123;</span><br><span class="line">      v8::platform::RunIdleTasks(g_default_platform, isolate,</span><br><span class="line">                                 <span class="number">50.0</span> / base::Time::kMillisecondsPerSecond);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function">HandleScope <span class="title">handle_scope</span><span class="params">(isolate)</span></span>;</span><br><span class="line">    PerIsolateData* data = PerIsolateData::Get(isolate);</span><br><span class="line">    Local&lt;Function&gt; callback;</span><br><span class="line">    <span class="keyword">if</span> (!data-&gt;GetTimeoutCallback().ToLocal(&amp;callback)) <span class="keyword">break</span>;</span><br><span class="line">    Local&lt;Context&gt; context;</span><br><span class="line">    <span class="keyword">if</span> (!data-&gt;GetTimeoutContext().ToLocal(&amp;context)) <span class="keyword">break</span>;</span><br><span class="line">    <span class="function">TryCatch <span class="title">try_catch</span><span class="params">(isolate)</span></span>;</span><br><span class="line">    try_catch.SetVerbose(<span class="literal">true</span>);</span><br><span class="line">    Context::<span class="function">Scope <span class="title">context_scope</span><span class="params">(context)</span></span>;</span><br><span class="line">    <span class="keyword">if</span> (callback-&gt;Call(context, Undefined(isolate), <span class="number">0</span>, <span class="literal">nullptr</span>).IsEmpty()) &#123;</span><br><span class="line">      Shell::ReportException(isolate, &amp;try_catch);</span><br><span class="line">      <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里的 ProcessMessages 就很有意思了.</p>
+<p>首先是一个死循环, 接着在这个死循环里面我们有另外一个 while 循环</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">while</span> (v8::platform::PumpMessageLoop(g_default_platform, isolate,</span><br><span class="line">                                        behavior())) &#123;</span><br><span class="line">    isolate-&gt;RunMicrotasks();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里<code>behavior</code>是外部传入的 lambda, 表示 PumpMessageLoop 的等待参数, 我们看一下这个参数的含义</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Pumps the message loop for the given isolate.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * The caller has to make sure that this is called from the right thread.</span></span><br><span class="line"><span class="comment"> * Returns true if a task was executed, and false otherwise. Unless requested</span></span><br><span class="line"><span class="comment"> * through the |behavior| parameter, this call does not block if no task is</span></span><br><span class="line"><span class="comment"> * pending. The |platform| has to be created using |NewDefaultPlatform|.</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function">V8_PLATFORM_EXPORT <span class="keyword">bool</span> <span class="title">PumpMessageLoop</span><span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params">    v8::Platform* platform, v8::Isolate* isolate,</span></span></span><br><span class="line"><span class="function"><span class="params">    MessageLoopBehavior behavior = MessageLoopBehavior::kDoNotWait)</span></span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">enum</span> <span class="class"><span class="keyword">class</span> <span class="title">MessageLoopBehavior</span> :</span> <span class="keyword">bool</span> &#123;</span><br><span class="line">  kDoNotWait = <span class="literal">false</span>,</span><br><span class="line">  kWaitForWork = <span class="literal">true</span></span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment">* Runs the Microtask Work Queue until empty</span></span><br><span class="line"><span class="comment">* Any exceptions thrown by microtask callbacks are swallowed.</span></span><br><span class="line"><span class="comment">*/</span></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">RunMicrotasks</span><span class="params">()</span></span>;</span><br></pre></td></tr></table></figure>
+<p>根据定义, kDoNotWait 为默认属性, 表示不等待消息到达, 即表示 PumpMessageLoop 如果没有任务, 不会阻塞线程. 返回 true 表示有任务被执行, false 表示没有.</p>
+<p>刚才的 EmptyMessageQueues 函数中直接返回了 kDoNotWait, 也就是说只要没有消息, 就直接返回 false, 继续执行代码; 如果为 true, 则将微队列任务全部执行.</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (g_default_platform-&gt;IdleTasksEnabled(isolate)) &#123;</span><br><span class="line">    v8::platform::RunIdleTasks(g_default_platform, isolate,</span><br><span class="line">                                <span class="number">50.0</span> / base::Time::kMillisecondsPerSecond);</span><br><span class="line">&#125;</span><br><span class="line"><span class="function">HandleScope <span class="title">handle_scope</span><span class="params">(isolate)</span></span>;</span><br><span class="line">PerIsolateData* data = PerIsolateData::Get(isolate);</span><br><span class="line">Local&lt;Function&gt; callback;</span><br><span class="line"><span class="keyword">if</span> (!data-&gt;GetTimeoutCallback().ToLocal(&amp;callback)) <span class="keyword">break</span>;</span><br><span class="line">Local&lt;Context&gt; context;</span><br><span class="line"><span class="keyword">if</span> (!data-&gt;GetTimeoutContext().ToLocal(&amp;context)) <span class="keyword">break</span>;</span><br><span class="line"><span class="function">TryCatch <span class="title">try_catch</span><span class="params">(isolate)</span></span>;</span><br><span class="line">try_catch.SetVerbose(<span class="literal">true</span>);</span><br><span class="line">Context::<span class="function">Scope <span class="title">context_scope</span><span class="params">(context)</span></span>;</span><br><span class="line"><span class="keyword">if</span> (callback-&gt;Call(context, Undefined(isolate), <span class="number">0</span>, <span class="literal">nullptr</span>).IsEmpty()) &#123;</span><br><span class="line">    Shell::ReportException(isolate, &amp;try_catch);</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>默认不开启 IdleTasksEnabled, 这里暂时跳过. 后面这段代码结合 d8 源码来看, 其目的就是尝试去获取 Isolate 中是否还有之前通过 timeout 函数设置的 callback, 如果有的话就尝试执行, 如果已经没有则 break 掉 while(true)循环</p>
+<p>总结一下, 在 ExecuteString 函数中, 会以 kDoNotWait 方式去清空微队列中的任务, 并且执行所有的 timeout 回调</p>
+<h4 id="CompleteMessageLoop-分析"><a href="#CompleteMessageLoop-分析" class="headerlink" title="CompleteMessageLoop 分析"></a>CompleteMessageLoop 分析</h4><p>RunMain 中的第二行关键调用就是 CompleteMessageLoop</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">void</span> Shell::CompleteMessageLoop(Isolate* isolate) &#123;</span><br><span class="line">  <span class="keyword">auto</span> get_waiting_behaviour = [isolate]() &#123;</span><br><span class="line">    base::MutexGuard guard(isolate_status_lock_.Pointer());</span><br><span class="line">    DCHECK_GT(isolate_status_.count(isolate), <span class="number">0</span>);</span><br><span class="line">    i::Isolate* i_isolate = <span class="keyword">reinterpret_cast</span>&lt;i::Isolate*&gt;(isolate);</span><br><span class="line">    i::wasm::WasmEngine* wasm_engine = i_isolate-&gt;wasm_engine();</span><br><span class="line">    <span class="keyword">bool</span> should_wait = (options.wait_for_wasm &amp;&amp;</span><br><span class="line">                        wasm_engine-&gt;HasRunningCompileJob(i_isolate)) ||</span><br><span class="line">                       isolate_status_[isolate];</span><br><span class="line">    <span class="keyword">return</span> should_wait ? platform::MessageLoopBehavior::kWaitForWork</span><br><span class="line">                       : platform::MessageLoopBehavior::kDoNotWait;</span><br><span class="line">  &#125;;</span><br><span class="line">  ProcessMessages(isolate, get_waiting_behaviour);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里居然直接写了一段跟 WASM 强相关的逻辑:</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">bool</span> should_wait = (options.wait_for_wasm &amp;&amp;</span><br><span class="line">                        wasm_engine-&gt;HasRunningCompileJob(i_isolate)) ||</span><br><span class="line">                       isolate_status_[isolate];</span><br></pre></td></tr></table></figure>
+<p><code>wait_for_wasm</code>默认为<code>true</code>, 也就是说, 只要 HasRunningCompileJob 也为 true, 我们投递给 PumpMessageLoop 的 MessageLoopBehavior 即 kWaitForWork.</p>
+<p>当 MessageLoopBehavior 为 kWaitForWork 时, v8 会等待任务执行结束, 没有任务则会直接阻塞线程.</p>
+<p>虽然还没有具体分析, 但目前可以推测 WASM 在 7.2 这个版本编译的实现变成了一个异步任务, 而外部如果想要知道这个执行结束的消息一定会依赖 Promise#resolve 方式来执行, d8 采用了 kWaitForWork 的方式来确保线程能够等待到 WASM 编译结束, 调用其对应的 resolve 或 reject 函数. (这里还需要再具体地根据源码分析, 如果以后被打脸了就再修改这里的分析内容)</p>
+<h3 id="解决方案"><a href="#解决方案" class="headerlink" title="解决方案"></a>解决方案</h3><p>d8 中对 wasm 的处理方式对我们是否有所启发呢？<br>对比一下我和 d8 的代码, 很快就可以得出结论了.</p>
+<p>在我的代码中</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// sample wasm javascript code here.</span></span><br><span class="line">  <span class="keyword">const</span> <span class="keyword">char</span> *csource = R<span class="string">"(</span></span><br><span class="line"><span class="string">    WebAssembly.instantiate(new Uint8Array([0,97,115,109,1,0,0,0,1,8,2,96,1,127,0,96,0,0,2,8,1,2,106,</span></span><br><span class="line"><span class="string">      115,1,95,0,0,3,2,1,1,8,1,1,10,9,1,7,0,65,185,10,16,0,11]),</span></span><br><span class="line"><span class="string">      &#123;js:&#123;_:console.log('Called from WebAssembly Hello world')&#125;&#125;).then(function(obj) &#123;</span></span><br><span class="line"><span class="string">        log('Called with instance ' + obj);</span></span><br><span class="line"><span class="string">      &#125;).catch(function(err) &#123;</span></span><br><span class="line"><span class="string">        log('Called with error ' + err);</span></span><br><span class="line"><span class="string">      &#125;);</span></span><br><span class="line"><span class="string">  )"</span>; <span class="comment">// should call my Hello World log and trigger the error or return the instance successfully</span></span><br><span class="line"></span><br><span class="line">  v8::<span class="function">HandleScope <span class="title">handle_scope</span><span class="params">(isolate)</span></span>;</span><br><span class="line">  <span class="keyword">auto</span> ctx = persistentContext.Get(isolate);</span><br><span class="line">  v8::Context::<span class="function">Scope <span class="title">context_scope</span><span class="params">(ctx)</span></span>;</span><br><span class="line">  v8::<span class="function">TryCatch <span class="title">try_catch</span><span class="params">(isolate)</span></span>;</span><br><span class="line">  v8::Local&lt;v8::String&gt; source = v8::String::NewFromUtf8(isolate, csource,</span><br><span class="line">                                                         v8::NewStringType::kNormal).ToLocalChecked();</span><br><span class="line"></span><br><span class="line">  v8::Local&lt;v8::Script&gt; script =</span><br><span class="line">      v8::Script::Compile(ctx, source).ToLocalChecked();</span><br><span class="line">  v8::Local&lt;v8::Value&gt; result;</span><br><span class="line">  <span class="keyword">if</span> (!script-&gt;Run(ctx).ToLocal(&amp;result)) &#123;</span><br><span class="line">    ReportException(isolate, &amp;try_catch); <span class="comment">// report exception, ignore the implementation here</span></span><br><span class="line">    <span class="keyword">return</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="comment">// Convert the result to an UTF8 string and print it.</span></span><br><span class="line">  v8::String::<span class="function">Utf8Value <span class="title">utf8</span><span class="params">(isolate, result)</span></span>;</span><br><span class="line">  __android_log_print(ANDROID_LOG_INFO, <span class="string">"V8Native"</span>, <span class="string">"%s\n"</span>, *utf8);</span><br></pre></td></tr></table></figure>
+<p>当执行这段代码时, <code>script-&gt;Run(ctx)</code>可以理解为 REPL 中的 Evaluate 环节,<br><code>__android_log_print(ANDROID_LOG_INFO, &quot;V8Native&quot;, &quot;%s\n&quot;, *utf8)</code>可以理解为 REPL 中的 Print 环节.</p>
+<p>但这里我们少了个 Loop, 这里引入了问题. WebAssembly.instantiate 的异步编译导致我们不再有机会执行异步编译成功/失败后的 resolve 或者 reject 方法, 我们没有等待 WebAssembly 执行结束就直接返回了.</p>
+<p>那么如何解决这个问题呢?</p>
+<p>最暴力的方案就是直接在我们的函数结尾加上一段:</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">while</span> (v8::platform::PumpMessageLoop(platform, isolate, v8::platform::MessageLoopBehavior::kWaitForWork)) &#123;</span><br><span class="line">    isolate-&gt;RunMicrotasks();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这样我们会强制要求等待所有的消息到达并全部执行后才会结束, 这样解决了我的 demo 问题, 但这个方式显然不解决通用场景.</p>
+<p><code>v8::platform::MessageLoopBehavior::kWaitForWork</code>表示如果没有消息了, 那么 v8 会选择阻塞线程来等待, 你可以类比这个为 epoll_wait(), 那么我们如果有一段 js 代码, 例如:</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">console</span>.log(<span class="string">"Hello world"</span>);</span><br></pre></td></tr></table></figure>
+<p>这段代码本身不涉及任何微队列或异步问题, Run 结束后就应该立刻返回, 但是 kWaitForWork 会告诉 v8, 没有消息也必须等待, 那么我们的函数也就永远不会返回了.</p>
+<p>实际上比较合理的做法应该是在你的 JS 执行线程中进行一个固定的 timer 操作, 类似 node.js 中的 Event Loop 去固定触发一个定时器, 这个定时器一方面要及时去触发 setTimeout 或 setInterval 之类的定时操作, 另一方面则是需要让 v8 及时地去刷新自己的消息队列并执行微队列任务, 例如:</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">eventLoop</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">while</span> (v8::platform::PumpMessageLoop(platform, isolate)) &#123;</span><br><span class="line">        isolate-&gt;RunMicrotasks();</span><br><span class="line">    &#125;</span><br><span class="line">    m_spTimer-&gt;updateCallback();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这样就解决了我的问题, 我的 WASM 也成功地在 Android 设备上执行了.这篇文章有一些自己的主观臆断, 如果有与我分析不一致的情况, 欢迎通过邮件或 github issues 的方式讨论.</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://tedaliez.github.io/2019/06/06/v8%E6%89%A7%E8%A1%8CWebAssembly%E9%81%87%E5%88%B0%E7%9A%84%E9%97%AE%E9%A2%98%E5%92%8C%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95/" data-id="ckgx4rr8i001ki8x7o00slupi" class="article-share-link">Share</a>
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/v8-WebAssembly/" rel="tag">v8, WebAssembly</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2019/06/29/APT%E6%8F%92%E4%BB%B6%E5%AE%9E%E6%88%98/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          APT插件实战
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2019/05/31/v8-Android%E4%BA%A4%E5%8F%89%E7%BC%96%E8%AF%91/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">v8 Android交叉编译</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/Android-ROOM/" rel="tag">Android, ROOM</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/NDK/" rel="tag">NDK</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/TypeScript/" rel="tag">TypeScript</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/WebAssembly/" rel="tag">WebAssembly</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/WebView-JSBridge/" rel="tag">WebView, JSBridge</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/android/" rel="tag">android</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/android-jetpack-compose/" rel="tag">android, jetpack compose</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/android-mmkv/" rel="tag">android, mmkv</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/android-textview/" rel="tag">android, textview</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/kotlin/" rel="tag">kotlin</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/kotlin-coroutine/" rel="tag">kotlin, coroutine</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/kotlin-%E5%8D%8F%E7%A8%8B/" rel="tag">kotlin, 协程</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/v8-WebAssembly/" rel="tag">v8, WebAssembly</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/Android-ROOM/" style="font-size: 10px;">Android, ROOM</a> <a href="/tags/NDK/" style="font-size: 10px;">NDK</a> <a href="/tags/TypeScript/" style="font-size: 10px;">TypeScript</a> <a href="/tags/WebAssembly/" style="font-size: 15px;">WebAssembly</a> <a href="/tags/WebView-JSBridge/" style="font-size: 10px;">WebView, JSBridge</a> <a href="/tags/android/" style="font-size: 15px;">android</a> <a href="/tags/android-jetpack-compose/" style="font-size: 10px;">android, jetpack compose</a> <a href="/tags/android-mmkv/" style="font-size: 20px;">android, mmkv</a> <a href="/tags/android-textview/" style="font-size: 10px;">android, textview</a> <a href="/tags/kotlin/" style="font-size: 10px;">kotlin</a> <a href="/tags/kotlin-coroutine/" style="font-size: 10px;">kotlin, coroutine</a> <a href="/tags/kotlin-%E5%8D%8F%E7%A8%8B/" style="font-size: 10px;">kotlin, 协程</a> <a href="/tags/v8-WebAssembly/" style="font-size: 10px;">v8, WebAssembly</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/09/">September 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/08/">August 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/07/">July 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/05/">May 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/03/">March 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/02/">February 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/01/">January 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/12/">December 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/11/">November 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/09/">September 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/07/">July 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/06/">June 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/05/">May 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/03/">March 2019</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2020/09/13/FFMpeg-Android%E5%BC%80%E5%8F%91-%E7%AE%80%E5%8D%95%E9%9F%B3%E8%A7%86%E9%A2%91%E5%90%8C%E6%AD%A5/">FFMpeg-Android开发-简单音视频同步</a>
+          </li>
+        
+          <li>
+            <a href="/2020/09/12/Kotlin%E5%8D%8F%E7%A8%8B%E5%BC%82%E5%B8%B8%E5%A4%84%E7%90%86/">Kotlin协程异常处理</a>
+          </li>
+        
+          <li>
+            <a href="/2020/08/29/FFMpeg-Android%E5%BC%80%E5%8F%91-%E7%AE%80%E5%8D%95%E6%92%AD%E6%94%BE%E9%9F%B3%E9%A2%91/">FFMpeg-Android开发-简单播放音频</a>
+          </li>
+        
+          <li>
+            <a href="/2020/08/23/FFMpeg-Android%E5%BC%80%E5%8F%91-%E7%AE%80%E5%8D%95%E6%92%AD%E6%94%BE%E8%A7%86%E9%A2%91/">FFMpeg-Android开发-简单播放视频</a>
+          </li>
+        
+          <li>
+            <a href="/2020/08/22/FFMpeg-Android%E5%BC%80%E5%8F%91-%E8%A7%A3%E6%9E%90%E8%A7%86%E9%A2%91%E6%A0%BC%E5%BC%8F/">FFMpeg-Android开发-解析视频格式</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2020 Jian Guo<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+  </div>
+</body>
+</html>

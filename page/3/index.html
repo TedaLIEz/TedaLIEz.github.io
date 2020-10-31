@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+
+  
+  <title>Aichi_B7A</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta property="og:type" content="website">
+<meta property="og:title" content="Aichi_B7A">
+<meta property="og:url" content="https://tedaliez.github.io/page/3/index.html">
+<meta property="og:site_name" content="Aichi_B7A">
+<meta property="og:locale">
+<meta property="article:author" content="Jian Guo">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="/atom.xml" title="Aichi_B7A" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+<meta name="generator" content="Hexo 5.2.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Aichi_B7A</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="https://tedaliez.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main">
+  
+    <article id="post-v8执行WebAssembly遇到的问题和解决方法" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2019/06/06/v8%E6%89%A7%E8%A1%8CWebAssembly%E9%81%87%E5%88%B0%E7%9A%84%E9%97%AE%E9%A2%98%E5%92%8C%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95/" class="article-date">
+  <time datetime="2019-06-06T11:20:44.000Z" itemprop="datePublished">2019-06-06</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2019/06/06/v8%E6%89%A7%E8%A1%8CWebAssembly%E9%81%87%E5%88%B0%E7%9A%84%E9%97%AE%E9%A2%98%E5%92%8C%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95/">v8执行WebAssembly遇到的问题和解决方法</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <ul>
+<li><p><a href="#%e9%97%ae%e9%a2%98%e7%9a%84%e7%ae%80%e5%8d%95%e5%88%86%e6%9e%90">问题的简单分析</a></p>
+<ul>
+<li><a href="#%e6%9f%a5%e9%98%85d8cc">查阅<code>d8.cc</code></a><ul>
+<li><a href="#sourcegroupexecute%e7%ae%80%e5%8d%95%e5%88%86%e6%9e%90">SourceGroup::Execute 简单分析</a></li>
+<li><a href="#completemessageloop%e5%88%86%e6%9e%90">CompleteMessageLoop 分析</a></li>
+</ul>
+</li>
+<li><a href="#%e8%a7%a3%e5%86%b3%e6%96%b9%e6%a1%88">解决方案</a></li>
+</ul>
+</li>
+</ul>
+<p>最近在 7.2 分支上做一些 WebAssembly 能力的验证, 但是发现了一些奇怪的现象, 具体的问题描述可以参考<a href="https://stackoverflow.com/questions/56428990/webassembly-instantiate-didnt-call-then-nor-catch-in-v8-embedded" target="_blank" rel="noopener">https://stackoverflow.com/questions/56428990/webassembly-instantiate-didnt-call-then-nor-catch-in-v8-embedded</a></p>
+<p>简单来说,</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br></pre></td><td class="code"><pre><span class="line">WebAssembly.instantiate(</span><br><span class="line">  <span class="keyword">new</span> <span class="built_in">Uint8Array</span>([</span><br><span class="line">    <span class="number">0</span>,</span><br><span class="line">    <span class="number">97</span>,</span><br><span class="line">    <span class="number">115</span>,</span><br><span class="line">    <span class="number">109</span>,</span><br><span class="line">    <span class="number">1</span>,</span><br><span class="line">    <span class="number">0</span>,</span><br><span class="line">    <span class="number">0</span>,</span><br><span class="line">    <span class="number">0</span>,</span><br><span class="line">    <span class="number">1</span>,</span><br><span class="line">    <span class="number">8</span>,</span><br><span class="line">    <span class="number">2</span>,</span><br><span class="line">    <span class="number">96</span>,</span><br><span class="line">    <span class="number">1</span>,</span><br><span class="line">    <span class="number">127</span>,</span><br><span class="line">    <span class="number">0</span>,</span><br><span class="line">    <span class="number">96</span>,</span><br><span class="line">    <span class="number">0</span>,</span><br><span class="line">    <span class="number">0</span>,</span><br><span class="line">    <span class="number">2</span>,</span><br><span class="line">    <span class="number">8</span>,</span><br><span class="line">    <span class="number">1</span>,</span><br><span class="line">    <span class="number">2</span>,</span><br><span class="line">    <span class="number">106</span>,</span><br><span class="line">    <span class="number">115</span>,</span><br><span class="line">    <span class="number">1</span>,</span><br><span class="line">    <span class="number">95</span>,</span><br><span class="line">    <span class="number">0</span>,</span><br><span class="line">    <span class="number">0</span>,</span><br><span class="line">    <span class="number">3</span>,</span><br><span class="line">    <span class="number">2</span>,</span><br><span class="line">    <span class="number">1</span>,</span><br><span class="line">    <span class="number">1</span>,</span><br><span class="line">    <span class="number">8</span>,</span><br><span class="line">    <span class="number">1</span>,</span><br><span class="line">    <span class="number">1</span>,</span><br><span class="line">    <span class="number">10</span>,</span><br><span class="line">    <span class="number">9</span>,</span><br><span class="line">    <span class="number">1</span>,</span><br><span class="line">    <span class="number">7</span>,</span><br><span class="line">    <span class="number">0</span>,</span><br><span class="line">    <span class="number">65</span>,</span><br><span class="line">    <span class="number">185</span>,</span><br><span class="line">    <span class="number">10</span>,</span><br><span class="line">    <span class="number">16</span>,</span><br><span class="line">    <span class="number">0</span>,</span><br><span class="line">    <span class="number">11</span></span><br><span class="line">  ]),</span><br><span class="line">  &#123;</span><br><span class="line">    js: &#123;</span><br><span class="line">      _: <span class="built_in">console</span>.log(<span class="string">"Called from WebAssembly Hello world"</span>)</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">)</span><br><span class="line">  .then(<span class="function"><span class="keyword">function</span>(<span class="params">obj</span>) </span>&#123;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="string">"Called with instance "</span> + obj);</span><br><span class="line">  &#125;)</span><br><span class="line">  .catch(<span class="function"><span class="keyword">function</span>(<span class="params">err</span>) </span>&#123;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="string">"Called with error "</span> + err);</span><br><span class="line">  &#125;);</span><br></pre></td></tr></table></figure>
+<p>上面这段代码既没有执行 then 函数, 又没有执行 catch 函数, 明显不符合 Web API 的预期.</p>
+<h2 id="问题的简单分析"><a href="#问题的简单分析" class="headerlink" title="问题的简单分析"></a>问题的简单分析</h2><p>为了分析这个问题, 我尝试在我自己编译的 d8 中执行上面这段脚本, d8 是 v8 编译时默认生成的一个可交互 JS 运行环境, 简单理解就是一个 JS 的 REPL<br><img src="/2019/06/06/v8执行WebAssembly遇到的问题和解决方法/v8_WASM_1.jpg"></p>
+<p>很神奇, 我居然之后的 REPL 中获得了 catch 的调用, 也就是说 d8 一次执行结束后也没有返回 Promise 的 resolve 或者 reject. 那么这里就需要查查 d8 实现的方式了</p>
+<h3 id="查阅d8-cc"><a href="#查阅d8-cc" class="headerlink" title="查阅d8.cc"></a>查阅<code>d8.cc</code></h3><p>直接来到<code>src/d8.cc</code>, 来到最关键的函数<code>Shell::Main</code></p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">int</span> Shell::RunMain(Isolate* isolate, <span class="keyword">int</span> argc, <span class="keyword">char</span>* argv[], <span class="keyword">bool</span> last_run) &#123;</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt; options.num_isolates; ++i) &#123;</span><br><span class="line">    options.isolate_sources[i].StartExecuteInThread();</span><br><span class="line">  &#125;</span><br><span class="line">  &#123;</span><br><span class="line">    SetWaitUntilDone(isolate, <span class="literal">false</span>);</span><br><span class="line">    <span class="keyword">if</span> (options.lcov_file) &#123;</span><br><span class="line">      debug::Coverage::SelectMode(isolate, debug::Coverage::kBlockCount);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function">HandleScope <span class="title">scope</span><span class="params">(isolate)</span></span>;</span><br><span class="line">    Local&lt;Context&gt; context = CreateEvaluationContext(isolate);</span><br><span class="line">    <span class="keyword">bool</span> use_existing_context = last_run &amp;&amp; use_interactive_shell();</span><br><span class="line">    <span class="keyword">if</span> (use_existing_context) &#123;</span><br><span class="line">      <span class="comment">// Keep using the same context in the interactive shell.</span></span><br><span class="line">      evaluation_context_.Reset(isolate, context);</span><br><span class="line">    &#125;</span><br><span class="line">    &#123;</span><br><span class="line">      Context::<span class="function">Scope <span class="title">cscope</span><span class="params">(context)</span></span>;</span><br><span class="line">      <span class="function">InspectorClient <span class="title">inspector_client</span><span class="params">(context, options.enable_inspector)</span></span>;</span><br><span class="line">      PerIsolateData::<span class="function">RealmScope <span class="title">realm_scope</span><span class="params">(PerIsolateData::Get(isolate))</span></span>;</span><br><span class="line">      options.isolate_sources[<span class="number">0</span>].Execute(isolate);  <span class="comment">// 关键</span></span><br><span class="line">      CompleteMessageLoop(isolate);   <span class="comment">// 关键</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (!use_existing_context) &#123;</span><br><span class="line">      DisposeModuleEmbedderData(context);</span><br><span class="line">    &#125;</span><br><span class="line">    WriteLcovData(isolate, options.lcov_file);</span><br><span class="line">  &#125;</span><br><span class="line">  CollectGarbage(isolate);</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt; options.num_isolates; ++i) &#123;</span><br><span class="line">    <span class="keyword">if</span> (last_run) &#123;</span><br><span class="line">      options.isolate_sources[i].JoinThread();</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      options.isolate_sources[i].WaitForThread();</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  CleanupWorkers();</span><br><span class="line">  <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>关键看这两行:</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">options.isolate_sources[<span class="number">0</span>].Execute(isolate);  <span class="comment">// 关键</span></span><br><span class="line">CompleteMessageLoop(isolate);   <span class="comment">// 关键</span></span><br></pre></td></tr></table></figure>
+<p>options.isolate_sources[0]实际上是一个 SourceGroup 对象</p>
+<h4 id="SourceGroup-Execute-简单分析"><a href="#SourceGroup-Execute-简单分析" class="headerlink" title="SourceGroup::Execute 简单分析"></a>SourceGroup::Execute 简单分析</h4><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">void</span> SourceGroup::Execute(Isolate* isolate) &#123;</span><br><span class="line">  <span class="keyword">bool</span> exception_was_thrown = <span class="literal">false</span>;</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = begin_offset_; i &lt; end_offset_; ++i) &#123;</span><br><span class="line">    <span class="comment">// 参数检查, 这里略去</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// Use all other arguments as names of files to load and run.</span></span><br><span class="line">    <span class="function">HandleScope <span class="title">handle_scope</span><span class="params">(isolate)</span></span>;</span><br><span class="line">    Local&lt;String&gt; file_name =</span><br><span class="line">        String::NewFromUtf8(isolate, arg, NewStringType::kNormal)</span><br><span class="line">            .ToLocalChecked();</span><br><span class="line">    Local&lt;String&gt; source = ReadFile(isolate, arg);</span><br><span class="line">    <span class="keyword">if</span> (source.IsEmpty()) &#123;</span><br><span class="line">      <span class="built_in">printf</span>(<span class="string">"Error reading '%s'\n"</span>, arg);</span><br><span class="line">      base::OS::ExitProcess(<span class="number">1</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    Shell::set_script_executed();</span><br><span class="line">    <span class="keyword">if</span> (!Shell::ExecuteString(isolate, source, file_name, Shell::kNoPrintResult,</span><br><span class="line">                              Shell::kReportExceptions,</span><br><span class="line">                              Shell::kProcessMessageQueue)) &#123;  <span class="comment">// 关键</span></span><br><span class="line">      exception_was_thrown = <span class="literal">true</span>;</span><br><span class="line">      <span class="keyword">break</span>;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">if</span> (exception_was_thrown != Shell::options.expected_to_throw) &#123;</span><br><span class="line">    base::OS::ExitProcess(<span class="number">1</span>);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>再进去看<code>Shell::ExecuteString</code></p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">bool</span> Shell::ExecuteString(Isolate* isolate, Local&lt;String&gt; source,</span><br><span class="line">                          Local&lt;Value&gt; name, PrintResult print_result,</span><br><span class="line">                          ReportExceptions report_exceptions,</span><br><span class="line">                          ProcessMessageQueue process_message_queue) &#123;</span><br><span class="line">  <span class="function">HandleScope <span class="title">handle_scope</span><span class="params">(isolate)</span></span>;</span><br><span class="line">  <span class="function">TryCatch <span class="title">try_catch</span><span class="params">(isolate)</span></span>;</span><br><span class="line">  try_catch.SetVerbose(<span class="literal">true</span>);</span><br><span class="line"></span><br><span class="line">  MaybeLocal&lt;Value&gt; maybe_result;</span><br><span class="line">  <span class="keyword">bool</span> success = <span class="literal">true</span>;</span><br><span class="line">  &#123;</span><br><span class="line">    PerIsolateData* data = PerIsolateData::Get(isolate);</span><br><span class="line">    Local&lt;Context&gt; realm =</span><br><span class="line">        Local&lt;Context&gt;::New(isolate, data-&gt;realms_[data-&gt;realm_current_]);</span><br><span class="line">    Context::<span class="function">Scope <span class="title">context_scope</span><span class="params">(realm)</span></span>;</span><br><span class="line">    MaybeLocal&lt;Script&gt; maybe_script;</span><br><span class="line">    Local&lt;Context&gt; context(isolate-&gt;GetCurrentContext());</span><br><span class="line">    <span class="function">ScriptOrigin <span class="title">origin</span><span class="params">(name)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">//  部分代码略去</span></span><br><span class="line"></span><br><span class="line">    Local&lt;Script&gt; script;</span><br><span class="line">    <span class="keyword">if</span> (!maybe_script.ToLocal(&amp;script)) &#123;</span><br><span class="line">      <span class="comment">// Print errors that happened during compilation.</span></span><br><span class="line">      <span class="keyword">if</span> (report_exceptions) ReportException(isolate, &amp;try_catch);</span><br><span class="line">      <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 部分代码略去</span></span><br><span class="line">    maybe_result = script-&gt;Run(realm);</span><br><span class="line">    <span class="keyword">if</span> (options.code_cache_options ==</span><br><span class="line">        ShellOptions::CodeCacheOptions::kProduceCacheAfterExecute) &#123;</span><br><span class="line">      <span class="comment">// Serialize and store it in memory for the next execution.</span></span><br><span class="line">      ScriptCompiler::CachedData* cached_data =</span><br><span class="line">          ScriptCompiler::CreateCodeCache(script-&gt;GetUnboundScript());</span><br><span class="line">      StoreInCodeCache(isolate, source, cached_data);</span><br><span class="line">      <span class="keyword">delete</span> cached_data;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (process_message_queue &amp;&amp; !EmptyMessageQueues(isolate)) success = <span class="literal">false</span>;  <span class="comment">// 关键</span></span><br><span class="line">    data-&gt;realm_current_ = data-&gt;realm_switch_;</span><br><span class="line">  &#125;</span><br><span class="line">  Local&lt;Value&gt; result;</span><br><span class="line">  <span class="keyword">if</span> (!maybe_result.ToLocal(&amp;result)) &#123;</span><br><span class="line">    DCHECK(try_catch.HasCaught());</span><br><span class="line">    <span class="comment">// Print errors that happened during execution.</span></span><br><span class="line">    <span class="keyword">if</span> (report_exceptions) ReportException(isolate, &amp;try_catch);</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  DCHECK(!try_catch.HasCaught());</span><br><span class="line">  <span class="keyword">if</span> (print_result) &#123;</span><br><span class="line">    <span class="keyword">if</span> (options.test_shell) &#123;</span><br><span class="line">      <span class="keyword">if</span> (!result-&gt;IsUndefined()) &#123;</span><br><span class="line">        <span class="comment">// If all went well and the result wasn't undefined then print</span></span><br><span class="line">        <span class="comment">// the returned value.</span></span><br><span class="line">        v8::String::<span class="function">Utf8Value <span class="title">str</span><span class="params">(isolate, result)</span></span>;</span><br><span class="line">        fwrite(*str, <span class="keyword">sizeof</span>(**str), str.length(), <span class="built_in">stdout</span>);</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">"\n"</span>);</span><br><span class="line">      &#125;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      v8::String::Utf8Value str(isolate, Stringify(isolate, result));</span><br><span class="line">      fwrite(*str, <span class="keyword">sizeof</span>(**str), str.length(), <span class="built_in">stdout</span>);</span><br><span class="line">      <span class="built_in">printf</span>(<span class="string">"\n"</span>);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> success;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>看着就跟官方 demo 里面执行 hello world 差不多, 但是其中的一行有点令人在意.</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (process_message_queue &amp;&amp; !EmptyMessageQueues(isolate)) success = <span class="literal">false</span>;</span><br></pre></td></tr></table></figure>
+<p>这个 EmptyMessageQueues 是什么意思?</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">bool</span> Shell::EmptyMessageQueues(Isolate* isolate) &#123;</span><br><span class="line">  <span class="keyword">return</span> ProcessMessages(</span><br><span class="line">      isolate, []() &#123; <span class="keyword">return</span> platform::MessageLoopBehavior::kDoNotWait; &#125;);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">bool</span> <span class="title">ProcessMessages</span><span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params">    Isolate* isolate,</span></span></span><br><span class="line"><span class="function"><span class="params">    <span class="keyword">const</span> <span class="built_in">std</span>::function&lt;platform::MessageLoopBehavior()&gt;&amp; behavior)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">while</span> (<span class="literal">true</span>) &#123;</span><br><span class="line">    i::Isolate* i_isolate = <span class="keyword">reinterpret_cast</span>&lt;i::Isolate*&gt;(isolate);</span><br><span class="line">    i::<span class="function">SaveContext <span class="title">saved_context</span><span class="params">(i_isolate)</span></span>;</span><br><span class="line">    i_isolate-&gt;set_context(i::Context());</span><br><span class="line">    <span class="function">SealHandleScope <span class="title">shs</span><span class="params">(isolate)</span></span>;</span><br><span class="line">    <span class="keyword">while</span> (v8::platform::PumpMessageLoop(g_default_platform, isolate,</span><br><span class="line">                                         behavior())) &#123;</span><br><span class="line">      isolate-&gt;RunMicrotasks();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (g_default_platform-&gt;IdleTasksEnabled(isolate)) &#123;</span><br><span class="line">      v8::platform::RunIdleTasks(g_default_platform, isolate,</span><br><span class="line">                                 <span class="number">50.0</span> / base::Time::kMillisecondsPerSecond);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function">HandleScope <span class="title">handle_scope</span><span class="params">(isolate)</span></span>;</span><br><span class="line">    PerIsolateData* data = PerIsolateData::Get(isolate);</span><br><span class="line">    Local&lt;Function&gt; callback;</span><br><span class="line">    <span class="keyword">if</span> (!data-&gt;GetTimeoutCallback().ToLocal(&amp;callback)) <span class="keyword">break</span>;</span><br><span class="line">    Local&lt;Context&gt; context;</span><br><span class="line">    <span class="keyword">if</span> (!data-&gt;GetTimeoutContext().ToLocal(&amp;context)) <span class="keyword">break</span>;</span><br><span class="line">    <span class="function">TryCatch <span class="title">try_catch</span><span class="params">(isolate)</span></span>;</span><br><span class="line">    try_catch.SetVerbose(<span class="literal">true</span>);</span><br><span class="line">    Context::<span class="function">Scope <span class="title">context_scope</span><span class="params">(context)</span></span>;</span><br><span class="line">    <span class="keyword">if</span> (callback-&gt;Call(context, Undefined(isolate), <span class="number">0</span>, <span class="literal">nullptr</span>).IsEmpty()) &#123;</span><br><span class="line">      Shell::ReportException(isolate, &amp;try_catch);</span><br><span class="line">      <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里的 ProcessMessages 就很有意思了.</p>
+<p>首先是一个死循环, 接着在这个死循环里面我们有另外一个 while 循环</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">while</span> (v8::platform::PumpMessageLoop(g_default_platform, isolate,</span><br><span class="line">                                        behavior())) &#123;</span><br><span class="line">    isolate-&gt;RunMicrotasks();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里<code>behavior</code>是外部传入的 lambda, 表示 PumpMessageLoop 的等待参数, 我们看一下这个参数的含义</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Pumps the message loop for the given isolate.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * The caller has to make sure that this is called from the right thread.</span></span><br><span class="line"><span class="comment"> * Returns true if a task was executed, and false otherwise. Unless requested</span></span><br><span class="line"><span class="comment"> * through the |behavior| parameter, this call does not block if no task is</span></span><br><span class="line"><span class="comment"> * pending. The |platform| has to be created using |NewDefaultPlatform|.</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function">V8_PLATFORM_EXPORT <span class="keyword">bool</span> <span class="title">PumpMessageLoop</span><span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params">    v8::Platform* platform, v8::Isolate* isolate,</span></span></span><br><span class="line"><span class="function"><span class="params">    MessageLoopBehavior behavior = MessageLoopBehavior::kDoNotWait)</span></span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">enum</span> <span class="class"><span class="keyword">class</span> <span class="title">MessageLoopBehavior</span> :</span> <span class="keyword">bool</span> &#123;</span><br><span class="line">  kDoNotWait = <span class="literal">false</span>,</span><br><span class="line">  kWaitForWork = <span class="literal">true</span></span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment">* Runs the Microtask Work Queue until empty</span></span><br><span class="line"><span class="comment">* Any exceptions thrown by microtask callbacks are swallowed.</span></span><br><span class="line"><span class="comment">*/</span></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">RunMicrotasks</span><span class="params">()</span></span>;</span><br></pre></td></tr></table></figure>
+<p>根据定义, kDoNotWait 为默认属性, 表示不等待消息到达, 即表示 PumpMessageLoop 如果没有任务, 不会阻塞线程. 返回 true 表示有任务被执行, false 表示没有.</p>
+<p>刚才的 EmptyMessageQueues 函数中直接返回了 kDoNotWait, 也就是说只要没有消息, 就直接返回 false, 继续执行代码; 如果为 true, 则将微队列任务全部执行.</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (g_default_platform-&gt;IdleTasksEnabled(isolate)) &#123;</span><br><span class="line">    v8::platform::RunIdleTasks(g_default_platform, isolate,</span><br><span class="line">                                <span class="number">50.0</span> / base::Time::kMillisecondsPerSecond);</span><br><span class="line">&#125;</span><br><span class="line"><span class="function">HandleScope <span class="title">handle_scope</span><span class="params">(isolate)</span></span>;</span><br><span class="line">PerIsolateData* data = PerIsolateData::Get(isolate);</span><br><span class="line">Local&lt;Function&gt; callback;</span><br><span class="line"><span class="keyword">if</span> (!data-&gt;GetTimeoutCallback().ToLocal(&amp;callback)) <span class="keyword">break</span>;</span><br><span class="line">Local&lt;Context&gt; context;</span><br><span class="line"><span class="keyword">if</span> (!data-&gt;GetTimeoutContext().ToLocal(&amp;context)) <span class="keyword">break</span>;</span><br><span class="line"><span class="function">TryCatch <span class="title">try_catch</span><span class="params">(isolate)</span></span>;</span><br><span class="line">try_catch.SetVerbose(<span class="literal">true</span>);</span><br><span class="line">Context::<span class="function">Scope <span class="title">context_scope</span><span class="params">(context)</span></span>;</span><br><span class="line"><span class="keyword">if</span> (callback-&gt;Call(context, Undefined(isolate), <span class="number">0</span>, <span class="literal">nullptr</span>).IsEmpty()) &#123;</span><br><span class="line">    Shell::ReportException(isolate, &amp;try_catch);</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>默认不开启 IdleTasksEnabled, 这里暂时跳过. 后面这段代码结合 d8 源码来看, 其目的就是尝试去获取 Isolate 中是否还有之前通过 timeout 函数设置的 callback, 如果有的话就尝试执行, 如果已经没有则 break 掉 while(true)循环</p>
+<p>总结一下, 在 ExecuteString 函数中, 会以 kDoNotWait 方式去清空微队列中的任务, 并且执行所有的 timeout 回调</p>
+<h4 id="CompleteMessageLoop-分析"><a href="#CompleteMessageLoop-分析" class="headerlink" title="CompleteMessageLoop 分析"></a>CompleteMessageLoop 分析</h4><p>RunMain 中的第二行关键调用就是 CompleteMessageLoop</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">void</span> Shell::CompleteMessageLoop(Isolate* isolate) &#123;</span><br><span class="line">  <span class="keyword">auto</span> get_waiting_behaviour = [isolate]() &#123;</span><br><span class="line">    base::MutexGuard guard(isolate_status_lock_.Pointer());</span><br><span class="line">    DCHECK_GT(isolate_status_.count(isolate), <span class="number">0</span>);</span><br><span class="line">    i::Isolate* i_isolate = <span class="keyword">reinterpret_cast</span>&lt;i::Isolate*&gt;(isolate);</span><br><span class="line">    i::wasm::WasmEngine* wasm_engine = i_isolate-&gt;wasm_engine();</span><br><span class="line">    <span class="keyword">bool</span> should_wait = (options.wait_for_wasm &amp;&amp;</span><br><span class="line">                        wasm_engine-&gt;HasRunningCompileJob(i_isolate)) ||</span><br><span class="line">                       isolate_status_[isolate];</span><br><span class="line">    <span class="keyword">return</span> should_wait ? platform::MessageLoopBehavior::kWaitForWork</span><br><span class="line">                       : platform::MessageLoopBehavior::kDoNotWait;</span><br><span class="line">  &#125;;</span><br><span class="line">  ProcessMessages(isolate, get_waiting_behaviour);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里居然直接写了一段跟 WASM 强相关的逻辑:</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">bool</span> should_wait = (options.wait_for_wasm &amp;&amp;</span><br><span class="line">                        wasm_engine-&gt;HasRunningCompileJob(i_isolate)) ||</span><br><span class="line">                       isolate_status_[isolate];</span><br></pre></td></tr></table></figure>
+<p><code>wait_for_wasm</code>默认为<code>true</code>, 也就是说, 只要 HasRunningCompileJob 也为 true, 我们投递给 PumpMessageLoop 的 MessageLoopBehavior 即 kWaitForWork.</p>
+<p>当 MessageLoopBehavior 为 kWaitForWork 时, v8 会等待任务执行结束, 没有任务则会直接阻塞线程.</p>
+<p>虽然还没有具体分析, 但目前可以推测 WASM 在 7.2 这个版本编译的实现变成了一个异步任务, 而外部如果想要知道这个执行结束的消息一定会依赖 Promise#resolve 方式来执行, d8 采用了 kWaitForWork 的方式来确保线程能够等待到 WASM 编译结束, 调用其对应的 resolve 或 reject 函数. (这里还需要再具体地根据源码分析, 如果以后被打脸了就再修改这里的分析内容)</p>
+<h3 id="解决方案"><a href="#解决方案" class="headerlink" title="解决方案"></a>解决方案</h3><p>d8 中对 wasm 的处理方式对我们是否有所启发呢？<br>对比一下我和 d8 的代码, 很快就可以得出结论了.</p>
+<p>在我的代码中</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// sample wasm javascript code here.</span></span><br><span class="line">  <span class="keyword">const</span> <span class="keyword">char</span> *csource = R<span class="string">"(</span></span><br><span class="line"><span class="string">    WebAssembly.instantiate(new Uint8Array([0,97,115,109,1,0,0,0,1,8,2,96,1,127,0,96,0,0,2,8,1,2,106,</span></span><br><span class="line"><span class="string">      115,1,95,0,0,3,2,1,1,8,1,1,10,9,1,7,0,65,185,10,16,0,11]),</span></span><br><span class="line"><span class="string">      &#123;js:&#123;_:console.log('Called from WebAssembly Hello world')&#125;&#125;).then(function(obj) &#123;</span></span><br><span class="line"><span class="string">        log('Called with instance ' + obj);</span></span><br><span class="line"><span class="string">      &#125;).catch(function(err) &#123;</span></span><br><span class="line"><span class="string">        log('Called with error ' + err);</span></span><br><span class="line"><span class="string">      &#125;);</span></span><br><span class="line"><span class="string">  )"</span>; <span class="comment">// should call my Hello World log and trigger the error or return the instance successfully</span></span><br><span class="line"></span><br><span class="line">  v8::<span class="function">HandleScope <span class="title">handle_scope</span><span class="params">(isolate)</span></span>;</span><br><span class="line">  <span class="keyword">auto</span> ctx = persistentContext.Get(isolate);</span><br><span class="line">  v8::Context::<span class="function">Scope <span class="title">context_scope</span><span class="params">(ctx)</span></span>;</span><br><span class="line">  v8::<span class="function">TryCatch <span class="title">try_catch</span><span class="params">(isolate)</span></span>;</span><br><span class="line">  v8::Local&lt;v8::String&gt; source = v8::String::NewFromUtf8(isolate, csource,</span><br><span class="line">                                                         v8::NewStringType::kNormal).ToLocalChecked();</span><br><span class="line"></span><br><span class="line">  v8::Local&lt;v8::Script&gt; script =</span><br><span class="line">      v8::Script::Compile(ctx, source).ToLocalChecked();</span><br><span class="line">  v8::Local&lt;v8::Value&gt; result;</span><br><span class="line">  <span class="keyword">if</span> (!script-&gt;Run(ctx).ToLocal(&amp;result)) &#123;</span><br><span class="line">    ReportException(isolate, &amp;try_catch); <span class="comment">// report exception, ignore the implementation here</span></span><br><span class="line">    <span class="keyword">return</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="comment">// Convert the result to an UTF8 string and print it.</span></span><br><span class="line">  v8::String::<span class="function">Utf8Value <span class="title">utf8</span><span class="params">(isolate, result)</span></span>;</span><br><span class="line">  __android_log_print(ANDROID_LOG_INFO, <span class="string">"V8Native"</span>, <span class="string">"%s\n"</span>, *utf8);</span><br></pre></td></tr></table></figure>
+<p>当执行这段代码时, <code>script-&gt;Run(ctx)</code>可以理解为 REPL 中的 Evaluate 环节,<br><code>__android_log_print(ANDROID_LOG_INFO, &quot;V8Native&quot;, &quot;%s\n&quot;, *utf8)</code>可以理解为 REPL 中的 Print 环节.</p>
+<p>但这里我们少了个 Loop, 这里引入了问题. WebAssembly.instantiate 的异步编译导致我们不再有机会执行异步编译成功/失败后的 resolve 或者 reject 方法, 我们没有等待 WebAssembly 执行结束就直接返回了.</p>
+<p>那么如何解决这个问题呢?</p>
+<p>最暴力的方案就是直接在我们的函数结尾加上一段:</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">while</span> (v8::platform::PumpMessageLoop(platform, isolate, v8::platform::MessageLoopBehavior::kWaitForWork)) &#123;</span><br><span class="line">    isolate-&gt;RunMicrotasks();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这样我们会强制要求等待所有的消息到达并全部执行后才会结束, 这样解决了我的 demo 问题, 但这个方式显然不解决通用场景.</p>
+<p><code>v8::platform::MessageLoopBehavior::kWaitForWork</code>表示如果没有消息了, 那么 v8 会选择阻塞线程来等待, 你可以类比这个为 epoll_wait(), 那么我们如果有一段 js 代码, 例如:</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">console</span>.log(<span class="string">"Hello world"</span>);</span><br></pre></td></tr></table></figure>
+<p>这段代码本身不涉及任何微队列或异步问题, Run 结束后就应该立刻返回, 但是 kWaitForWork 会告诉 v8, 没有消息也必须等待, 那么我们的函数也就永远不会返回了.</p>
+<p>实际上比较合理的做法应该是在你的 JS 执行线程中进行一个固定的 timer 操作, 类似 node.js 中的 Event Loop 去固定触发一个定时器, 这个定时器一方面要及时去触发 setTimeout 或 setInterval 之类的定时操作, 另一方面则是需要让 v8 及时地去刷新自己的消息队列并执行微队列任务, 例如:</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">eventLoop</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">while</span> (v8::platform::PumpMessageLoop(platform, isolate)) &#123;</span><br><span class="line">        isolate-&gt;RunMicrotasks();</span><br><span class="line">    &#125;</span><br><span class="line">    m_spTimer-&gt;updateCallback();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这样就解决了我的问题, 我的 WASM 也成功地在 Android 设备上执行了.这篇文章有一些自己的主观臆断, 如果有与我分析不一致的情况, 欢迎通过邮件或 github issues 的方式讨论.</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://tedaliez.github.io/2019/06/06/v8%E6%89%A7%E8%A1%8CWebAssembly%E9%81%87%E5%88%B0%E7%9A%84%E9%97%AE%E9%A2%98%E5%92%8C%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95/" data-id="ckgx4rr8i001ki8x7o00slupi" class="article-share-link">Share</a>
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/v8-WebAssembly/" rel="tag">v8, WebAssembly</a></li></ul>
+
+    </footer>
+  </div>
+  
+</article>
+
+
+  
+    <article id="post-v8-Android交叉编译" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2019/05/31/v8-Android%E4%BA%A4%E5%8F%89%E7%BC%96%E8%AF%91/" class="article-date">
+  <time datetime="2019-05-31T14:16:46.000Z" itemprop="datePublished">2019-05-31</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2019/05/31/v8-Android%E4%BA%A4%E5%8F%89%E7%BC%96%E8%AF%91/">v8 Android交叉编译</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <ul>
+<li><a href="#%E7%BC%96%E8%AF%91%E5%87%86%E5%A4%87">编译准备</a></li>
+<li><a href="#%E7%BC%96%E8%AF%91">编译</a></li>
+<li><a href="#android%E7%AB%AF%E4%BA%A4%E5%8F%89%E7%BC%96%E8%AF%91">Android端交叉编译</a></li>
+<li><a href="#%E5%BC%80%E5%A7%8B%E7%BC%96%E8%AF%91">开始编译</a></li>
+<li><a href="#android-%E9%A1%B9%E7%9B%AE%E9%85%8D%E7%BD%AE">Android 项目配置</a></li>
+</ul>
+<h2 id="编译准备"><a href="#编译准备" class="headerlink" title="编译准备"></a>编译准备</h2><p>整个编译考虑到网络问题，强烈建议使用VPS的方式在服务器上进行编译。</p>
+<h2 id="编译"><a href="#编译" class="headerlink" title="编译"></a>编译</h2><p>第一个难关就是代码的获取，由于v8整个工具链比较长，这里建议直接用Proxifier设置代理后下载. Proxifier的配置这里不赘述. 整个过程都需要代理</p>
+<p>安装好Git和depot_tools后</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">mkdir ~/v8</span><br><span class="line"><span class="built_in">cd</span> ~/v8</span><br><span class="line">fetch v8</span><br><span class="line"><span class="built_in">cd</span> v8</span><br><span class="line"></span><br><span class="line"><span class="built_in">alias</span> gm=/path/to/v8/tools/dev/gm.py</span><br><span class="line"></span><br><span class="line">gm x64.release</span><br></pre></td></tr></table></figure>
+<p>参考 <a href="https://v8.dev/docs/build-gn" target="_blank" rel="noopener">https://v8.dev/docs/build-gn</a> 来做一些编译定制化</p>
+<h2 id="Android端交叉编译"><a href="#Android端交叉编译" class="headerlink" title="Android端交叉编译"></a>Android端交叉编译</h2><p>遵循上述步骤后, 来到<code>~/v8</code>你会看到一个.glient文件, 修改文件为</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"> <span class="string">solutions</span> <span class="string">=</span> <span class="string">[</span></span><br><span class="line">    <span class="string">&#123;</span></span><br><span class="line"><span class="attr">        "url":</span> <span class="string">"https://chromium.googlesource.com/v8/v8.git"</span><span class="string">,</span></span><br><span class="line"><span class="attr">        "managed":</span> <span class="literal">False</span><span class="string">,</span></span><br><span class="line"><span class="attr">        "name":</span> <span class="string">"v8"</span><span class="string">,</span></span><br><span class="line"><span class="attr">        "deps_file":</span> <span class="string">"DEPS"</span><span class="string">,</span></span><br><span class="line"><span class="attr">        "custom_deps":</span> <span class="string">&#123;&#125;,</span></span><br><span class="line">    <span class="string">&#125;,</span></span><br><span class="line"><span class="string">];</span></span><br><span class="line"><span class="string">target_os</span> <span class="string">=</span> <span class="string">["android",</span> <span class="string">"unix"</span><span class="string">];</span></span><br></pre></td></tr></table></figure>
+<p>之后<code>gclient sync</code>来获取Android交叉编译需要的工具</p>
+<h2 id="开始编译"><a href="#开始编译" class="headerlink" title="开始编译"></a>开始编译</h2><p>这里我们使用gn工具进行编译，下面贴以下我的gn编译的配置</p>
+<p>tools/dev/v8gen.py gen -m client.v8.ports -b “V8 Android Arm - builder” android.arm.release</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">android_unstripped_runtime_outputs = true</span><br><span class="line">v8_use_external_startup_data = false</span><br><span class="line">is_debug = false</span><br><span class="line">symbol_level = 1</span><br><span class="line">target_cpu = &quot;arm&quot;</span><br><span class="line">target_os = &quot;android&quot;</span><br><span class="line">use_goma = false</span><br><span class="line">v8_enable_i18n_support = false</span><br><span class="line">v8_static_library = true</span><br><span class="line">is_component_build = false</span><br><span class="line">v8_monolithic = true</span><br><span class="line">v8_android_log_stdout = true</span><br></pre></td></tr></table></figure>
+<p>其中v8_monolithic表示将静态库编译为一个文件，而非几个单独文件</p>
+<p>之后ninja -C android.arm.release</p>
+<p>编译成功后，在android.arm.release/obj找到libv8_monolith.a</p>
+<h2 id="Android-项目配置"><a href="#Android-项目配置" class="headerlink" title="Android 项目配置"></a>Android 项目配置</h2><p>我们需要把v8的头文件include进来，同时配置CMakeLists.txt</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">add_library(v8 STATIC IMPORTED)</span><br><span class="line">set_target_properties( v8 PROPERTIES IMPORTED_LOCATION $&#123;CMAKE_SOURCE_DIR&#125;/libs/$&#123;ANDROID_ABI&#125;/libv8_monolith.a)</span><br><span class="line"></span><br><span class="line">add_library( # Sets the name of the library.</span><br><span class="line">        native-lib</span><br><span class="line"></span><br><span class="line">        # Sets the library as a shared library.</span><br><span class="line">        SHARED</span><br><span class="line"></span><br><span class="line">        # Provides a relative path to your source file(s).</span><br><span class="line">        $&#123;CMAKE_SOURCE_DIR&#125;/src/main/cpp/native-lib.cpp)</span><br><span class="line"></span><br><span class="line">target_include_directories( native-lib PRIVATE $&#123;CMAKE_SOURCE_DIR&#125;/libs/include)</span><br></pre></td></tr></table></figure>
+<p>branch_head/7.2分支上测试成功</p>
+<p>具体的代码可以参考<a href="https://github.com/TedaLIEz/V8AndroidEmbedding" target="_blank" rel="noopener">https://github.com/TedaLIEz/V8AndroidEmbedding</a></p>
+<p>P.S</p>
+<p>将7.4之后的v8编译，就会遇到一个错误</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">../../buildtools/third_party/libc++/trunk/include/string:2724: error: undefined reference to &apos;std::__1::basic_string&lt;char, std::__1::char_traits&lt;char&gt;, std::__1::allocator&lt;char&gt; &gt;::insert(unsigned int, char const*, unsigned int)&apos;</span><br><span class="line">/Users/JianGuo/AndroidProject/V8DemoApplication/app/src/main/cpp/native-lib.cpp:25: error: undefined reference to &apos;v8::platform::NewDefaultPlatform(int, v8::platform::IdleTaskSupport, v8::platform::InProcessStackDumping, std::__ndk1::unique_ptr&lt;v8::TracingController, std::__ndk1::default_delete&lt;v8::TracingController&gt; &gt;)&apos;</span><br><span class="line">clang++: error: linker command failed with exit code 1 (use -v to see invocation)</span><br><span class="line">ninja: build stopped: subcommand failed.</span><br></pre></td></tr></table></figure>
+<p>看日志，我们似乎编译出了一个错误的命名空间。那么我们来检查一下我们的静态库的命名空间</p>
+<p><code>objdump -D app/libs/armeabi-v7a/libv8_monolith.a | grep NewDefault</code></p>
+<p>得到:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">Disassembly of section .text._ZN2v88platform18NewDefaultPlatformEiNS0_15IdleTaskSupportENS0_21InProcessStackDumpingENSt3__110unique_ptrINS_17TracingControllerENS3_14default_deleteIS5_EEEE:</span><br><span class="line">_ZN2v88platform18NewDefaultPlatformEiNS0_15IdleTaskSupportENS0_21InProcessStackDumpingENSt3__110unique_ptrINS_17TracingControllerENS3_14default_deleteIS5_EEEE:</span><br><span class="line">       4:       81 b0 01 2b     blhs    #442884 &lt;_ZN2v88platform18NewDefaultPlatformEiNS0_15IdleTaskSupportENS0_21InProcessStackDumpingENSt3__110unique_ptrINS_17TracingControllerENS3_14default_deleteIS5_EEEE+0x6C210&gt;</span><br><span class="line">Disassembly of section .rel.text._ZN2v88platform18NewDefaultPlatformEiNS0_15IdleTaskSupportENS0_21InProcessStackDumpingENSt3__110unique_ptrINS_17TracingControllerENS3_14default_deleteIS5_EEEE:</span><br><span class="line">.rel.text._ZN2v88platform18NewDefaultPlatformEiNS0_15IdleTaskSupportENS0_21InProcessStackDumpingENSt3__110unique_ptrINS_17TracingControllerENS3_14default_deleteIS5_EEEE:</span><br><span class="line">Disassembly of section .ARM.exidx.text._ZN2v88platform18NewDefaultPlatformEiNS0_15IdleTaskSupportENS0_21InProcessStackDumpingENSt3__110unique_ptrINS_17TracingControllerENS3_14default_deleteIS5_EEEE:</span><br><span class="line">.ARM.exidx.text._ZN2v88platform18NewDefaultPlatformEiNS0_15IdleTaskSupportENS0_21InProcessStackDumpingENSt3__110unique_ptrINS_17TracingControllerENS3_14default_deleteIS5_EEEE:</span><br><span class="line">Disassembly of section .rel.ARM.exidx.text._ZN2v88platform18NewDefaultPlatformEiNS0_15IdleTaskSupportENS0_21InProcessStackDumpingENSt3__110unique_ptrINS_17TracingControllerENS3_14default_deleteIS5_EEEE:</span><br><span class="line">.rel.ARM.exidx.text._ZN2v88platform18NewDefaultPlatformEiNS0_15IdleTaskSupportENS0_21InProcessStackDumpingENSt3__110unique_ptrINS_17TracingControllerENS3_14default_deleteIS5_EEEE:</span><br><span class="line">Disassembly of section .text._ZN2v811ArrayBuffer9Allocator19NewDefaultAllocatorEv:</span><br><span class="line">_ZN2v811ArrayBuffer9Allocator19NewDefaultAllocatorEv:</span><br><span class="line">Disassembly of section .rel.text._ZN2v811ArrayBuffer9Allocator19NewDefaultAllocatorEv:</span><br><span class="line">.rel.text._ZN2v811ArrayBuffer9Allocator19NewDefaultAllocatorEv:</span><br><span class="line">Disassembly of section .ARM.exidx.text._ZN2v811ArrayBuffer9Allocator19NewDefaultAllocatorEv:</span><br><span class="line">.ARM.exidx.text._ZN2v811ArrayBuffer9Allocator19NewDefaultAllocatorEv:</span><br><span class="line">Disassembly of section .rel.ARM.exidx.text._ZN2v811ArrayBuffer9Allocator19NewDefaultAllocatorEv:</span><br><span class="line">.rel.ARM.exidx.text._ZN2v811ArrayBuffer9Allocator19NewDefaultAllocatorEv:</span><br></pre></td></tr></table></figure></p>
+<p>其中得到这么一串粉碎命名：</p>
+<p><code>_ZN2v88platform18NewDefaultPlatformEiNS0_15IdleTaskSupportENS0_21InProcessStackDumpingENSt3__110unique_ptrINS_17TracingControllerENS3_14default_deleteIS5_EEEE</code></p>
+<p>通过demangle后得到:</p>
+<p><code>v8::platform::NewDefaultPlatform(int, v8::platform::IdleTaskSupport, v8::platform::InProcessStackDumping, std::__1::unique_ptr&lt;v8::TracingController, std::__1::default_delete&lt;v8::TracingController&gt; &gt;)</code><br>也就是说，我们的静态库编译出了std::<strong>1::unique_ptr，但是ld时却寻找std::</strong>ndk1::unique_ptr。</p>
+<p>继续看日志，发现编译时尝试寻找<code>../../buildtools/third_party/libc++/trunk/include/string:2724</code>, 不妨去v8的源码中看一下。来到buildtools/third_party/libc++/trunk/__config:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">#ifndef _LIBCPP_ABI_NAMESPACE</span><br><span class="line"># define _LIBCPP_ABI_NAMESPACE _LIBCPP_CONCAT(__,_LIBCPP_ABI_VERSION)</span><br><span class="line">#endif</span><br><span class="line">#define _LIBCPP_BEGIN_NAMESPACE_STD namespace std &#123; inline namespace _LIBCPP_ABI_NAMESPACE &#123;</span><br><span class="line">#define _LIBCPP_END_NAMESPACE_STD  &#125; &#125;</span><br><span class="line">#define _VSTD std::_LIBCPP_ABI_NAMESPACE</span><br><span class="line">_LIBCPP_BEGIN_NAMESPACE_STD _LIBCPP_END_NAMESPACE_STD</span><br></pre></td></tr></table></figure></p>
+<p>这里我们展开后其实就会得到:</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">namespace</span> <span class="built_in">std</span> &#123;</span><br><span class="line">    <span class="keyword">inline</span> <span class="keyword">namespace</span> __1 &#123;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>对比以下ndk中的__config:</p>
+<p>thrid_party/android_ndk/cxx-stl/llvm-libc++/include/__config</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">define</span> _LIBCPP_NAMESPACE _LIBCPP_CONCAT(__ndk,_LIBCPP_ABI_VERSION)</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> _LIBCPP_BEGIN_NAMESPACE_STD namespace std &#123;inline namespace _LIBCPP_NAMESPACE &#123;</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> _LIBCPP_END_NAMESPACE_STD  &#125; &#125;</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> _VSTD std::_LIBCPP_NAMESPACE</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">namespace</span> <span class="built_in">std</span> &#123;</span><br><span class="line">  <span class="keyword">inline</span> <span class="keyword">namespace</span> _LIBCPP_NAMESPACE &#123;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里展开后为:</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">namespace</span> <span class="built_in">std</span> &#123;</span><br><span class="line">  <span class="keyword">inline</span> <span class="keyword">namespace</span> __ndk1 &#123;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里显然是不一样的。也就是说ndk的libc++实际上更改了命名空间到__ndk这个前缀上，而v8进行编译时使用的libc++是<br><a href="https://chromium.googlesource.com/chromium/llvm-project/libcxx" target="_blank" rel="noopener">https://chromium.googlesource.com/chromium/llvm-project/libcxx</a><br>二者的命名空间显然是不同的。但为什么我编译使用的是buildtools/third_party/libc++而非thrid_party/android_ndk/cxx-stl/llvm-libc++？这个我还没有答案。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://tedaliez.github.io/2019/05/31/v8-Android%E4%BA%A4%E5%8F%89%E7%BC%96%E8%AF%91/" data-id="ckgx4rr7u0015i8x769hthk4o" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+</article>
+
+
+  
+    <article id="post-WebAssembly初探" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2019/05/25/WebAssembly%E5%88%9D%E6%8E%A2/" class="article-date">
+  <time datetime="2019-05-25T07:56:15.000Z" itemprop="datePublished">2019-05-25</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2019/05/25/WebAssembly%E5%88%9D%E6%8E%A2/">WebAssembly初探</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <ul>
+<li><a href="#%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83%E6%BC%94%E8%BF%9B">开发环境演进</a></li>
+<li><a href="#%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83">开发环境</a><ul>
+<li><a href="#emscripten%E5%B7%A5%E5%85%B7%E9%93%BE%E7%AE%80%E8%BF%B0">Emscripten工具链简述</a></li>
+</ul>
+</li>
+<li><a href="#%E5%AE%9E%E6%88%98">实战</a><ul>
+<li><a href="#js%E4%B8%AD%E5%8A%A0%E8%BD%BDwasm%E7%9A%84%E6%96%B9%E5%BC%8F">JS中加载wasm的方式</a></li>
+<li><a href="#js%E4%B8%AD%E8%B0%83%E7%94%A8wasm%E4%B8%AD%E7%9A%84%E5%87%BD%E6%95%B0%E6%88%96%E7%B1%BB">JS中调用wasm中的函数或类</a><ul>
+<li><a href="#%E8%B0%83%E7%94%A8%E5%87%BD%E6%95%B0">调用函数</a><ul>
+<li><a href="#%E5%8E%9F%E7%94%9F%E5%AE%9E%E7%8E%B0">原生实现</a></li>
+<li><a href="#embind%E8%83%BD%E5%8A%9B%E5%AE%9E%E7%8E%B0">Embind能力实现</a></li>
+<li><a href="#cwrap%E6%88%96ccall%E5%AE%9E%E7%8E%B0%E8%B0%83%E7%94%A8">cwrap或ccall实现调用</a></li>
+</ul>
+</li>
+<li><a href="#%E5%BC%95%E7%94%A8%E4%B8%80%E4%B8%AA%E7%B1%BB">引用一个类</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h2 id="开发环境演进"><a href="#开发环境演进" class="headerlink" title="开发环境演进"></a>开发环境演进</h2><p>目前稳定的webassembly的编译方式都需要通过asm.js来生成wasm(hacking)。LLVM WebAssembly 后端目前还处在研发过程中，没有稳定的版本。</p>
+<p><img src="WebAssemblyToolchain.png" alt></p>
+<p>整个开发环境的演变可以参考下面这两个ppt<br><a href="https://kripken.github.io/talks/emwasm.html" target="_blank" rel="noopener">https://kripken.github.io/talks/emwasm.html</a></p>
+<p><a href="http://kripken.github.io/talks/wasm.html" target="_blank" rel="noopener">http://kripken.github.io/talks/wasm.html</a></p>
+<h2 id="开发环境"><a href="#开发环境" class="headerlink" title="开发环境"></a>开发环境</h2><p>目前最常用的开发工具链是emscripten，emscripten可以将LLVM bitcode编译为javascript(LLVM to web compiler)</p>
+<p>使用Emscripten可以:</p>
+<ol>
+<li>编译C和C++代码为javascript</li>
+<li>将任何可以编译为LLVM bitcode的代码编译为javascript</li>
+<li>编译C/C++ runtimes 代码为javascript</li>
+</ol>
+<p>整个工具已经有了许多大型应用，可以认为是比较稳定的工具链 <a href="https://github.com/emscripten-core/emscripten/wiki/Porting-Examples-and-Demos" target="_blank" rel="noopener">https://github.com/emscripten-core/emscripten/wiki/Porting-Examples-and-Demos</a></p>
+<p>Emscripten同时也支持WebAssembly，默认通过asm2wasm将asm.js转为wasm <a href="https://github.com/WebAssembly/binaryen#cc-source--asm2wasm--webassembly" target="_blank" rel="noopener">https://github.com/WebAssembly/binaryen#cc-source--asm2wasm--webassembly</a></p>
+<p>Emscripten同时也提供了一些标准库的实现和WebAssembly能力的封装，减少我们配置WASM的负担。当然你也可以选择不使用Emscripten提供的能力，采用最原始的方式操作WASM</p>
+<h3 id="Emscripten工具链简述"><a href="#Emscripten工具链简述" class="headerlink" title="Emscripten工具链简述"></a>Emscripten工具链简述</h3><p><img src="EmscriptenToolchain.png" alt></p>
+<p>emcc使用clang将C/C++转为LLVMbitcode，然后使用Emscripten自己的编译器后端Fastcomp将bitcode转为javascript <a href="https://emscripten.org/docs/compiling/WebAssembly.html#llvm-webassembly-backend" target="_blank" rel="noopener">https://emscripten.org/docs/compiling/WebAssembly.html#llvm-webassembly-backend</a></p>
+<h2 id="实战"><a href="#实战" class="headerlink" title="实战"></a>实战</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Aside: When you compile C/C++ normally, you link with the system to provide implementations of the standard library methods your code uses.</span><br><span class="line"></span><br><span class="line">JavaScript doesn&apos;t have these methods—either not with the same signatures or names (e.g, Math.atan in JavaScript vs atan in C), or because it&apos;s conceptually different (think malloc vs JavaScript&apos;s objects and garbage collection)—so Emscripten has to provide them for you.</span><br></pre></td></tr></table></figure>
+<p>ONLY_MY_CODE 标志位用来表示你在编译不需要emcc提供的一些stardard库函数</p>
+<p>但是一般我们都是需要emcc提供的标准库函数的，不然我们连下面这个hello world代码都编译不出来</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;iostream&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">(<span class="keyword">int</span>, <span class="keyword">char</span>**)</span> </span>&#123;</span><br><span class="line">    <span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">"Hello, world!\n"</span>;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>用<code>emcc -o output.js *.cpp -s WASM=1 -s ONLY_MY_CODE=1</code>会提示:</p>
+<figure class="highlight shell"><figcaption><span>script</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">error: undefined symbol: _ZNKSt3__26locale9use_facetERNS0_2idE</span><br><span class="line">warning: To disable errors for undefined symbols use `-s ERROR_ON_UNDEFINED_SYMBOLS=0`</span><br><span class="line">error: undefined symbol: _ZNKSt3__28ios_base6getlocEv</span><br><span class="line">error: undefined symbol: _ZNSt3__212basic_stringIcNS_11char_traitsIcEENS_9allocatorIcEEE6__initEmc</span><br><span class="line">error: undefined symbol: _ZNSt3__212basic_stringIcNS_11char_traitsIcEENS_9allocatorIcEEED1Ev</span><br><span class="line">error: undefined symbol: _ZNSt3__213basic_ostreamIcNS_11char_traitsIcEEE6sentryC1ERS3_</span><br><span class="line">error: undefined symbol: _ZNSt3__213basic_ostreamIcNS_11char_traitsIcEEE6sentryD1Ev</span><br><span class="line">error: undefined symbol: _ZNSt3__26localeD1Ev</span><br><span class="line">error: undefined symbol: _ZNSt3__28ios_base5clearEj</span><br><span class="line">error: undefined symbol: _ZSt9terminatev</span><br><span class="line">error: undefined symbol: __cxa_begin_catch</span><br><span class="line">error: undefined symbol: __gxx_personality_v0</span><br><span class="line">error: undefined symbol: strlen</span><br><span class="line">error: undefined symbol: _ZNSt3__24coutE</span><br><span class="line">error: undefined symbol: _ZNSt3__25ctypeIcE2idE</span><br><span class="line">Error: Aborting compilation due to previous errors</span><br></pre></td></tr></table></figure>
+<p>理由也很简单，因为iostream中用到的标准api没有找到实现</p>
+<p>EXPORTED_FUNCTIONS表示我们希望从js能访问的函数，这个宏一般是我们编译希望不依赖Emscripten library的代码时用到。如果用了Emscripten提供的能力，不需要在编译参数里声明这个参数</p>
+<h3 id="JS中加载wasm的方式"><a href="#JS中加载wasm的方式" class="headerlink" title="JS中加载wasm的方式"></a>JS中加载wasm的方式</h3><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">async</span> <span class="function"><span class="keyword">function</span> <span class="title">createWebAssembly</span>(<span class="params">path, importObject</span>) </span>&#123;</span><br><span class="line">    <span class="keyword">const</span> result = <span class="keyword">await</span> <span class="built_in">window</span>.fetch(path);</span><br><span class="line">    <span class="keyword">const</span> bytes = <span class="keyword">await</span> result.arrayBuffer();</span><br><span class="line">    <span class="keyword">return</span> WebAssembly.instantiate(bytes, importObject);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里有个很关键的概念，importObject</p>
+<p>API文档对这个对象的定义是一个包含需要被import的对象，可以理解为被加载wasm需要的上下文，而这个上下文是非常基础的，可以包含内存大小的定义。</p>
+<p>一个典型的importObject如下</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> memory = <span class="keyword">new</span> WebAssembly.Memory(&#123;<span class="attr">initial</span>: <span class="number">256</span>, <span class="attr">maximum</span>: <span class="number">256</span>&#125;);</span><br><span class="line"><span class="keyword">const</span> env = &#123;</span><br><span class="line">      <span class="string">'abortStackOverflow'</span>: <span class="function"><span class="params">_</span> =&gt;</span> &#123; <span class="keyword">throw</span> <span class="keyword">new</span> <span class="built_in">Error</span>(<span class="string">'overflow'</span>); &#125;,</span><br><span class="line">      <span class="string">'table'</span>: <span class="keyword">new</span> WebAssembly.Table(&#123;<span class="attr">initial</span>: <span class="number">0</span>, <span class="attr">maximum</span>: <span class="number">0</span>, <span class="attr">element</span>: <span class="string">'anyfunc'</span>&#125;),  <span class="comment">// wasm调用JS里的方法的函数表</span></span><br><span class="line">      <span class="string">'__table_base'</span>: <span class="number">0</span>,</span><br><span class="line">      <span class="string">'memory'</span>: memory,</span><br><span class="line">      <span class="string">'__memory_base'</span>: <span class="number">1024</span>,</span><br><span class="line">      <span class="string">'STACKTOP'</span>: <span class="number">0</span>,</span><br><span class="line">      <span class="string">'STACK_MAX'</span>: memory.buffer.byteLength,</span><br><span class="line">&#125;;</span><br><span class="line"><span class="keyword">const</span> importObject = &#123;env&#125;;</span><br></pre></td></tr></table></figure>
+<p>可以看到这个importObject配置了内存相关的内容，wasm的内存模型也是一个线性模型, 配置项配置了整个内存的大小，并区分了栈和堆的内存地址</p>
+<p>上面的方式下，你不能用C/C++标准库的API，但好在Emscripten能够提供这些标准库的实现。Emscripten能够提供下面的能力：</p>
+<ol>
+<li>标准库方法，例如malloc，free等</li>
+<li>利用Emscripten Embind的能力将C++的函数和类暴露到js中</li>
+</ol>
+<h3 id="JS中调用wasm中的函数或类"><a href="#JS中调用wasm中的函数或类" class="headerlink" title="JS中调用wasm中的函数或类"></a>JS中调用wasm中的函数或类</h3><h4 id="调用函数"><a href="#调用函数" class="headerlink" title="调用函数"></a>调用函数</h4><h5 id="原生实现"><a href="#原生实现" class="headerlink" title="原生实现"></a>原生实现</h5><p>这种方式下我们不需要emscripten提供的能力来调用到wasm中的函数</p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">const wa = await createWebAssembly('output.wasm', importObject);</span><br><span class="line">wa.instance.exports.fun();</span><br></pre></td></tr></table></figure>
+<h5 id="Embind能力实现"><a href="#Embind能力实现" class="headerlink" title="Embind能力实现"></a>Embind能力实现</h5><p>emcc编译时默认会生成一个wasm文件和一个js文件，这个js文件就提供了相关的绑定能力，而我们在C++代码中则需要使用EMSCRIPTEN_BINDINGS这个宏</p>
+<p>例如：<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;emscripten/bind.h&gt;</span></span></span><br><span class="line"></span><br><span class="line">emscripten::<span class="function">val <span class="title">mandelbrot</span><span class="params">(<span class="keyword">int</span> w, <span class="keyword">int</span> h, <span class="keyword">double</span> zoom, <span class="keyword">double</span> moveX, <span class="keyword">double</span> moveY)</span></span>;</span><br><span class="line"></span><br><span class="line">EMSCRIPTEN_BINDINGS(hello)</span><br><span class="line">&#123;</span><br><span class="line">        emscripten::function(<span class="string">"mandelbrot"</span>, &amp;mandelbrot);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>我们可以在js中调用函数mandelbrot<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">&lt;script src=&quot;mandelbrot.js&quot;&gt;&lt;/script&gt;</span><br><span class="line">&lt;script&gt;</span><br><span class="line">const mandelbrot = Module.mandelbrot(width, 1, -0.5, 0);</span><br><span class="line">&lt;/script&gt;</span><br></pre></td></tr></table></figure></p>
+<h5 id="cwrap或ccall实现调用"><a href="#cwrap或ccall实现调用" class="headerlink" title="cwrap或ccall实现调用"></a>cwrap或ccall实现调用</h5><p>这种方式依赖cwrap这个emscripten的api来实现</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">"emscripten.h"</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdlib.h&gt;</span></span></span><br><span class="line"></span><br><span class="line">EMSCRIPTEN_KEEPALIVE</span><br><span class="line"><span class="keyword">uint8_t</span>* create_buffer(<span class="keyword">int</span> width, <span class="keyword">int</span> height) &#123;</span><br><span class="line">  <span class="keyword">return</span> <span class="built_in">malloc</span>(width * height * <span class="number">4</span> * <span class="keyword">sizeof</span>(<span class="keyword">uint8_t</span>));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>编译时使用命令<code>emcc -s WASM=1 -s EXTRA_EXPORTED_RUNTIME_METHODS=&#39;[&quot;create_buffer&quot;]&#39; lib.c</code></p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">script</span> <span class="attr">src</span>=<span class="string">"lib.js"</span>&gt;</span><span class="undefined"></span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">script</span>&gt;</span><span class="undefined"></span></span><br><span class="line"><span class="javascript">Module.onRuntimeInitialized = <span class="function"><span class="params">_</span> =&gt;</span> &#123;</span></span><br><span class="line"><span class="javascript">    <span class="keyword">const</span> fib = Module.cwrap(<span class="string">'create_buffer'</span>, <span class="string">'number'</span>, [<span class="string">'number'</span>]);</span></span><br><span class="line"><span class="javascript">    <span class="built_in">console</span>.log(fib(<span class="number">12</span>));</span></span><br><span class="line"><span class="undefined">  &#125;;</span></span><br><span class="line"><span class="undefined"></span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<p><code>EMSCRIPTEN_KEEPALIVE</code>表示提示编译器在优化过程中不要删去函数的代码，因为这个函数后续会被js调用</p>
+<h4 id="引用一个类"><a href="#引用一个类" class="headerlink" title="引用一个类"></a>引用一个类</h4><p>利用Embind，在JS代码中引用c++里的一个类</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;emscripten/bind.h&gt;</span></span></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Mandelbrot</span> &#123;</span></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">emscripten::<span class="function">val <span class="title">nextTile</span><span class="params">()</span></span>;</span><br><span class="line">Mandelbrot(<span class="keyword">int</span> width, <span class="keyword">int</span> height, <span class="keyword">double</span> zoom, <span class="keyword">double</span> moveX, <span class="keyword">double</span> moveY)</span><br><span class="line">      : width(width), height(height), zoom(zoom), moveX(moveX), moveY(moveY) &#123;&#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line">EMSCRIPTEN_BINDINGS(hello) &#123;</span><br><span class="line">  emscripten::class_&lt;Mandelbrot&gt;(<span class="string">"Mandelbrot"</span>)</span><br><span class="line">      .constructor&lt;<span class="keyword">int</span>, <span class="keyword">int</span>, <span class="keyword">double</span>, <span class="keyword">double</span>, <span class="keyword">double</span>&gt;()</span><br><span class="line">      .function(<span class="string">"nextTile"</span>, &amp;Mandelbrot::nextTile);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">script</span> <span class="attr">src</span>=<span class="string">"mandelbrot.js"</span>&gt;</span><span class="undefined"></span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">script</span>&gt;</span><span class="undefined"></span></span><br><span class="line"><span class="javascript"><span class="keyword">const</span> mandelbrot = <span class="keyword">new</span> Module.Mandelbrot(width, height, </span></span><br><span class="line"><span class="undefined">    1, -0.5, 0);</span></span><br><span class="line"><span class="javascript"><span class="keyword">const</span> tile = mandelbrot.nextTile();</span></span><br><span class="line"><span class="undefined"></span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://tedaliez.github.io/2019/05/25/WebAssembly%E5%88%9D%E6%8E%A2/" data-id="ckgx4rr7q000zi8x7shhx1kcy" class="article-share-link">Share</a>
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/WebAssembly/" rel="tag">WebAssembly</a></li></ul>
+
+    </footer>
+  </div>
+  
+</article>
+
+
+  
+    <article id="post-TypeScript中this的问题" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2019/05/25/TypeScript%E4%B8%ADthis%E7%9A%84%E9%97%AE%E9%A2%98/" class="article-date">
+  <time datetime="2019-05-25T07:52:23.000Z" itemprop="datePublished">2019-05-25</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2019/05/25/TypeScript%E4%B8%ADthis%E7%9A%84%E9%97%AE%E9%A2%98/">TypeScript中this的问题</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>typescript中对于this的转译有点意思，例如下面一段代码</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> Foo &#123;</span><br><span class="line">    bar = <span class="number">123</span>;</span><br><span class="line">    bas() &#123;</span><br><span class="line">        setTimeout(<span class="function"><span class="keyword">function</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">            <span class="built_in">console</span>.log(<span class="string">'this is'</span>, <span class="keyword">this</span>);</span><br><span class="line">            <span class="built_in">console</span>.log(<span class="keyword">this</span>.bar);</span><br><span class="line">        &#125;, <span class="number">100</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> foo = <span class="keyword">new</span> Foo();</span><br><span class="line">foo.bas();</span><br></pre></td></tr></table></figure>
+<p>这段代码中，this将会指向settimeout的this，即window,那么this.bar就会是undefined</p>
+<p>转译结果</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> Foo = (<span class="function"><span class="keyword">function</span> (<span class="params"></span>) </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">function</span> <span class="title">Foo</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">        <span class="keyword">this</span>.bar = <span class="number">123</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    Foo.prototype.bas = <span class="function"><span class="keyword">function</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">        setTimeout(<span class="function"><span class="keyword">function</span> (<span class="params"></span>) </span>&#123;</span><br><span class="line">            <span class="built_in">console</span>.log(<span class="string">'this is'</span>, <span class="keyword">this</span>);</span><br><span class="line">            <span class="built_in">console</span>.log(<span class="keyword">this</span>.bar);</span><br><span class="line">        &#125;, <span class="number">100</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> Foo;</span><br><span class="line">&#125;)();</span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> foo = <span class="keyword">new</span> Foo();</span><br><span class="line">foo.bas();</span><br></pre></td></tr></table></figure>
+<p>为了解决这个问题，最快的一个方法就是使用ts的lambda表达式</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> Foo &#123;</span><br><span class="line">    bar = <span class="number">123</span>;</span><br><span class="line">    bas() &#123;</span><br><span class="line">        setTimeout(<span class="function"><span class="params">()</span> =&gt;</span> &#123;</span><br><span class="line">            <span class="built_in">console</span>.log(<span class="string">'this is'</span>, <span class="keyword">this</span>);</span><br><span class="line">            <span class="built_in">console</span>.log(<span class="keyword">this</span>.bar);</span><br><span class="line">        &#125;, <span class="number">100</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> foo = <span class="keyword">new</span> Foo();</span><br><span class="line">foo.bas();</span><br></pre></td></tr></table></figure>
+<p>转译结果</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> Foo = (<span class="function"><span class="keyword">function</span> (<span class="params"></span>) </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">function</span> <span class="title">foo</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">        <span class="keyword">this</span>.bar = <span class="number">123</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    Foo.prototype.bas = <span class="function"><span class="keyword">function</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">        <span class="keyword">var</span> _this = <span class="keyword">this</span>; <span class="comment">// tricky part</span></span><br><span class="line">        setTimeout(<span class="function"><span class="keyword">function</span> (<span class="params"></span>) </span>&#123;</span><br><span class="line">            <span class="built_in">console</span>.log(<span class="string">'this is'</span>, _this);</span><br><span class="line">            <span class="built_in">console</span>.log(_this.bar);</span><br><span class="line">        &#125;, <span class="number">100</span>);</span><br><span class="line">    &#125;;</span><br><span class="line">    <span class="keyword">return</span> Foo;</span><br><span class="line">&#125;)();</span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> foo = <span class="keyword">new</span> Foo();</span><br><span class="line">foo.bas();</span><br></pre></td></tr></table></figure>
+<p>类似的还有</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> Foo &#123;</span><br><span class="line">    bar = <span class="number">123</span>;</span><br><span class="line">    bas() &#123;</span><br><span class="line">        <span class="built_in">console</span>.log(<span class="string">'this is'</span>, <span class="keyword">this</span>);</span><br><span class="line">        <span class="built_in">console</span>.log(<span class="keyword">this</span>.bar);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> foo = <span class="keyword">new</span> Foo();</span><br><span class="line"><span class="keyword">var</span> bas = foo.bas;</span><br><span class="line">bas();</span><br></pre></td></tr></table></figure>
+<p>这里我们把Foo的成员函数传给了bas变量，然后bas变量在外部调用。这个类似的场景还有将一个类的成员变量函数作为参数传给外部（回调等场景）</p>
+<p>转译结果</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> Foo = (<span class="function"><span class="keyword">function</span> (<span class="params"></span>) </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">function</span> <span class="title">foo</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">    	<span class="keyword">this</span>.bar = <span class="number">123</span>;</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	Foo.prototype.bas = <span class="function"><span class="keyword">function</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">        <span class="built_in">console</span>.log(<span class="string">'this is'</span>, <span class="keyword">this</span>);</span><br><span class="line">        <span class="built_in">console</span>.log(<span class="keyword">this</span>.bar);</span><br><span class="line">	&#125;;</span><br><span class="line">	<span class="keyword">return</span> bas;</span><br><span class="line">&#125;)();</span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> foo = <span class="keyword">new</span> Foo();</span><br><span class="line"><span class="keyword">var</span> bas = foo.bas;</span><br><span class="line">bas();</span><br></pre></td></tr></table></figure>
+<p>这个时候，bas调用的this将会指向全局变量，即window</p>
+<p>解决方案同样是使用lambda表达式</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> Foo &#123;</span><br><span class="line">    bar = <span class="number">123</span>;</span><br><span class="line">    </span><br><span class="line">    bas = <span class="function"><span class="params">()</span> =&gt;</span> &#123;</span><br><span class="line">        <span class="built_in">console</span>.log(<span class="string">'this is'</span>, <span class="keyword">this</span>);</span><br><span class="line">        <span class="built_in">console</span>.log(<span class="keyword">this</span>.bar);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> foo = <span class="keyword">new</span> Foo();</span><br><span class="line"><span class="keyword">var</span> bas = foo.bas;</span><br><span class="line">bas();</span><br></pre></td></tr></table></figure>
+<p>转译结果</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> Foo = <span class="function">(<span class="params"><span class="keyword">function</span> (</span>) =&gt;</span> &#123;</span><br><span class="line">    <span class="function"><span class="keyword">function</span> <span class="title">Foo</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">        <span class="keyword">var</span> _this = <span class="keyword">this</span>;</span><br><span class="line">        <span class="keyword">this</span>.bar = <span class="number">123</span>;</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">this</span>.bas = <span class="function"><span class="keyword">function</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">            <span class="built_in">console</span>.log(<span class="string">'this is'</span>, _this);</span><br><span class="line">            <span class="built_in">console</span>.log(_this.bar);</span><br><span class="line">        &#125;;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> foo;</span><br><span class="line">&#125;)();</span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> foo = <span class="keyword">new</span> Foo();</span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> bas = foo.bas;</span><br><span class="line">bas();</span><br></pre></td></tr></table></figure>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://tedaliez.github.io/2019/05/25/TypeScript%E4%B8%ADthis%E7%9A%84%E9%97%AE%E9%A2%98/" data-id="ckgx4rr7p000xi8x78ekfrso6" class="article-share-link">Share</a>
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/TypeScript/" rel="tag">TypeScript</a></li></ul>
+
+    </footer>
+  </div>
+  
+</article>
+
+
+  
+    <article id="post-NDK学习笔记" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2019/05/25/NDK%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" class="article-date">
+  <time datetime="2019-05-25T07:48:48.000Z" itemprop="datePublished">2019-05-25</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2019/05/25/NDK%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">NDK学习笔记</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>记录一下自己NDK开发过程中零散的学习记录</p>
+<h2 id="如何让CMake下的NDK-build打开verbose开关"><a href="#如何让CMake下的NDK-build打开verbose开关" class="headerlink" title="如何让CMake下的NDK build打开verbose开关"></a>如何让CMake下的NDK build打开verbose开关</h2><figure class="highlight groovy"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">externalNativeBuild &#123;</span><br><span class="line">  cmake &#123;</span><br><span class="line">    cppFlags <span class="string">"-std=c++11"</span></span><br><span class="line">    arguments <span class="string">"-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON"</span>   <span class="comment">// 关键</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="如何在externalNativeBuild中传递linker-flags"><a href="#如何在externalNativeBuild中传递linker-flags" class="headerlink" title="如何在externalNativeBuild中传递linker flags"></a>如何在externalNativeBuild中传递linker flags</h2><p>The <code>-Wl,xxx</code> option for gcc passes a comma-separated list of tokens as a space-separated list of arguments to the linker. So</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">gcc -Wl,aaa,bbb,ccc</span><br></pre></td></tr></table></figure>
+<p>eventually becomes a linker call</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ld aaa bbb ccc</span><br></pre></td></tr></table></figure>
+<h2 id="target-link-libraries"><a href="#target-link-libraries" class="headerlink" title="target_link_libraries"></a>target_link_libraries</h2><p>The idea is that you build modules in CMake, and link them together. Let’s ignore header files for now, as they can be all included in your source files.</p>
+<p>Say you have file1.cpp, file2.cpp, main.cpp. You add them to your project with:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">ADD_LIBRARY(LibsModule </span><br><span class="line">    file1.cpp</span><br><span class="line">    file2.cpp</span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+<p>Now you added them to a module called LibsModule. Keep that in mind. Say you want to link to pthread for example that’s already in the system. You can combine it with LibsModule using the command:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">target_link_libraries(LibsModule -lpthread)</span><br></pre></td></tr></table></figure>
+<p>And if you want to link a static library to that too, you do this:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">target_link_libraries(LibsModule liblapack.a)</span><br></pre></td></tr></table></figure>
+<p>And if you want to add a directory where any of these libraries are located, you do this:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">target_link_libraries(LibsModule -L/home/user/libs/somelibpath/)</span><br></pre></td></tr></table></figure>
+<p>Now you add an executable, and you link it with your main file:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ADD_EXECUTABLE(MyProgramExecBlaBla main.cpp)</span><br></pre></td></tr></table></figure>
+<p>(I added BlaBla just to make it clear that the name is custom). And then you link LibsModule with your executable module MyProgramExecBlaBla</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">target_link_libraries(MyProgramExecBlaBla LibsModule)</span><br></pre></td></tr></table></figure>
+<p>And this will do it.</p>
+<p>What I see in your CMake file is a lot of redundancy. For example, why do you have texture_mapping, which is an executable module in your include directories? So you need to clean this up and follow the simple logic I explained. Hopefully it works.</p>
+<p>In summary, it looks like this:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">project (MyProgramExecBlaBla)  #not sure whether this should be the same name of the executable, but I always see that &quot;convention&quot;</span><br><span class="line">cmake_minimum_required(VERSION 2.8)</span><br><span class="line"></span><br><span class="line">ADD_LIBRARY(LibsModule </span><br><span class="line">    file1.cpp</span><br><span class="line">    file2.cpp</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line">target_link_libraries(LibsModule -lpthread)</span><br><span class="line">target_link_libraries(LibsModule liblapack.a)</span><br><span class="line">target_link_libraries(LibsModule -L/home/user/libs/somelibpath/)</span><br><span class="line">ADD_EXECUTABLE(MyProgramExecBlaBla main.cpp)</span><br><span class="line">target_link_libraries(MyProgramExecBlaBla LibsModule)</span><br></pre></td></tr></table></figure>
+<p>The most important thing to understand is the module structure, where you create modules and link them all together with your executable. Once this works, you can complicate your project further with more details. Good luck!</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://tedaliez.github.io/2019/05/25/NDK%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" data-id="ckgx4rr7o000vi8x7p4uvlwn6" class="article-share-link">Share</a>
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/NDK/" rel="tag">NDK</a></li></ul>
+
+    </footer>
+  </div>
+  
+</article>
+
+
+  
+    <article id="post-aosp" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2019/03/02/aosp/" class="article-date">
+  <time datetime="2019-03-02T10:20:28.933Z" itemprop="datePublished">2019-03-02</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2019/03/02/aosp/">AOSP MacOS编译问题总结</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <ol>
+<li><p>AS反复提示indexing</p>
+<p><a href="https://github.com/flutter/flutter-intellij/issues/1735#issuecomment-376597481" target="_blank" rel="noopener">https://github.com/flutter/flutter-intellij/issues/1735#issuecomment-376597481</a> 在flutter中找到一个办法，在AS 3.1中对应的iml配置项下加一行</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">option</span> <span class="attr">name</span>=<span class="string">"ALLOW_USER_CONFIGURATION"</span> <span class="attr">value</span>=<span class="string">"false"</span> /&gt;</span></span><br></pre></td></tr></table></figure>
+</li>
+<li><p>“sed: illegal option – r”</p>
+<p>mac上安装<code>brew install gnu-sed --with-default-names</code>之后<code>export PATH=&quot;/usr/local/opt/gnu-sed/libexec/gnubin:$PATH&quot;</code></p>
+</li>
+<li><p>repo init -u <a href="https://github.com/LineageOS/android.git" target="_blank" rel="noopener">https://github.com/LineageOS/android.git</a> -b lineage-15.2</p>
+</li>
+<li><p>获取 proprietary blobs的相关文件，在.repo/local_manifests/roomservice.xml(如果没有手动创建一个), </p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?xml version="1.0" encoding="UTF-8"?&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">manifest</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">project</span> <span class="attr">name</span>=<span class="string">"LineageOS/android_device_oneplus_oneplus3"</span> <span class="attr">path</span>=<span class="string">"device/oneplus/oneplus3"</span> <span class="attr">remote</span>=<span class="string">"github"</span> /&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">project</span> <span class="attr">name</span>=<span class="string">"LineageOS/android_kernel_oneplus_msm8996"</span> <span class="attr">path</span>=<span class="string">"kernel/oneplus/msm8996"</span> <span class="attr">remote</span>=<span class="string">"github"</span> /&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">project</span> <span class="attr">name</span>=<span class="string">"LineageOS/android_packages_resources_devicesettings"</span> <span class="attr">path</span>=<span class="string">"packages/resources/devicesettings"</span> <span class="attr">remote</span>=<span class="string">"github"</span> /&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">project</span> <span class="attr">depth</span>=<span class="string">"1"</span> <span class="attr">name</span>=<span class="string">"TheMuppets/proprietary_vendor_oneplus"</span> <span class="attr">path</span>=<span class="string">"vendor/oneplus"</span> /&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">project</span> <span class="attr">name</span>=<span class="string">"LineageOS/android_device_oppo_common"</span> <span class="attr">path</span>=<span class="string">"device/oppo/common"</span> <span class="attr">remote</span>=<span class="string">"github"</span> /&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">manifest</span>&gt;</span></span><br></pre></td></tr></table></figure>
+</li>
+<li><p>repo sync</p>
+</li>
+<li>未完待续，后续补充</li>
+</ol>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://tedaliez.github.io/2019/03/02/aosp/" data-id="ckgx4rr7t0013i8x7rgc71sk0" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+</article>
+
+
+  
+
+
+  <nav id="page-nav">
+    
+    <a class="extend prev" rel="prev" href="/page/2/">&amp;laquo; Prev</a><a class="page-number" href="/">1</a><a class="page-number" href="/page/2/">2</a><span class="page-number current">3</span>
+  </nav>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/Android-ROOM/" rel="tag">Android, ROOM</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/NDK/" rel="tag">NDK</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/TypeScript/" rel="tag">TypeScript</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/WebAssembly/" rel="tag">WebAssembly</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/WebView-JSBridge/" rel="tag">WebView, JSBridge</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/android/" rel="tag">android</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/android-jetpack-compose/" rel="tag">android, jetpack compose</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/android-mmkv/" rel="tag">android, mmkv</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/android-textview/" rel="tag">android, textview</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/kotlin/" rel="tag">kotlin</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/kotlin-coroutine/" rel="tag">kotlin, coroutine</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/kotlin-%E5%8D%8F%E7%A8%8B/" rel="tag">kotlin, 协程</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/v8-WebAssembly/" rel="tag">v8, WebAssembly</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/Android-ROOM/" style="font-size: 10px;">Android, ROOM</a> <a href="/tags/NDK/" style="font-size: 10px;">NDK</a> <a href="/tags/TypeScript/" style="font-size: 10px;">TypeScript</a> <a href="/tags/WebAssembly/" style="font-size: 15px;">WebAssembly</a> <a href="/tags/WebView-JSBridge/" style="font-size: 10px;">WebView, JSBridge</a> <a href="/tags/android/" style="font-size: 15px;">android</a> <a href="/tags/android-jetpack-compose/" style="font-size: 10px;">android, jetpack compose</a> <a href="/tags/android-mmkv/" style="font-size: 20px;">android, mmkv</a> <a href="/tags/android-textview/" style="font-size: 10px;">android, textview</a> <a href="/tags/kotlin/" style="font-size: 10px;">kotlin</a> <a href="/tags/kotlin-coroutine/" style="font-size: 10px;">kotlin, coroutine</a> <a href="/tags/kotlin-%E5%8D%8F%E7%A8%8B/" style="font-size: 10px;">kotlin, 协程</a> <a href="/tags/v8-WebAssembly/" style="font-size: 10px;">v8, WebAssembly</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/09/">September 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/08/">August 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/07/">July 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/05/">May 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/03/">March 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/02/">February 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/01/">January 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/12/">December 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/11/">November 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/09/">September 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/07/">July 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/06/">June 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/05/">May 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/03/">March 2019</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2020/09/13/FFMpeg-Android%E5%BC%80%E5%8F%91-%E7%AE%80%E5%8D%95%E9%9F%B3%E8%A7%86%E9%A2%91%E5%90%8C%E6%AD%A5/">FFMpeg-Android开发-简单音视频同步</a>
+          </li>
+        
+          <li>
+            <a href="/2020/09/12/Kotlin%E5%8D%8F%E7%A8%8B%E5%BC%82%E5%B8%B8%E5%A4%84%E7%90%86/">Kotlin协程异常处理</a>
+          </li>
+        
+          <li>
+            <a href="/2020/08/29/FFMpeg-Android%E5%BC%80%E5%8F%91-%E7%AE%80%E5%8D%95%E6%92%AD%E6%94%BE%E9%9F%B3%E9%A2%91/">FFMpeg-Android开发-简单播放音频</a>
+          </li>
+        
+          <li>
+            <a href="/2020/08/23/FFMpeg-Android%E5%BC%80%E5%8F%91-%E7%AE%80%E5%8D%95%E6%92%AD%E6%94%BE%E8%A7%86%E9%A2%91/">FFMpeg-Android开发-简单播放视频</a>
+          </li>
+        
+          <li>
+            <a href="/2020/08/22/FFMpeg-Android%E5%BC%80%E5%8F%91-%E8%A7%A3%E6%9E%90%E8%A7%86%E9%A2%91%E6%A0%BC%E5%BC%8F/">FFMpeg-Android开发-解析视频格式</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2020 Jian Guo<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+  </div>
+</body>
+</html>

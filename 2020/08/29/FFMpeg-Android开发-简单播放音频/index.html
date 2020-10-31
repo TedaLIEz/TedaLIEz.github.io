@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+
+  
+  <title>FFMpeg-Android开发-简单播放音频 | Aichi_B7A</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="本文部分对应的源代码可参考https:&#x2F;&#x2F;github.com&#x2F;TedaLIEz&#x2F;MyFFMpegAndroid&#x2F;tree&#x2F;v1.2 具体实现音频播放的整个流程和视频非常相似，都经历了下面几个步骤  解析 container 根据 container，获得我们关心的媒体数据（例如播放视频，那我们只关心视频媒体） 根据媒体信息获得对应的解码器 将对应的数据送给解码器 解码器解码，输出帧 将帧渲染到目">
+<meta property="og:type" content="article">
+<meta property="og:title" content="FFMpeg-Android开发-简单播放音频">
+<meta property="og:url" content="https://tedaliez.github.io/2020/08/29/FFMpeg-Android%E5%BC%80%E5%8F%91-%E7%AE%80%E5%8D%95%E6%92%AD%E6%94%BE%E9%9F%B3%E9%A2%91/index.html">
+<meta property="og:site_name" content="Aichi_B7A">
+<meta property="og:description" content="本文部分对应的源代码可参考https:&#x2F;&#x2F;github.com&#x2F;TedaLIEz&#x2F;MyFFMpegAndroid&#x2F;tree&#x2F;v1.2 具体实现音频播放的整个流程和视频非常相似，都经历了下面几个步骤  解析 container 根据 container，获得我们关心的媒体数据（例如播放视频，那我们只关心视频媒体） 根据媒体信息获得对应的解码器 将对应的数据送给解码器 解码器解码，输出帧 将帧渲染到目">
+<meta property="og:locale">
+<meta property="article:published_time" content="2020-08-29T01:04:55.000Z">
+<meta property="article:modified_time" content="2020-08-29T01:11:32.640Z">
+<meta property="article:author" content="Jian Guo">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="/atom.xml" title="Aichi_B7A" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+<meta name="generator" content="Hexo 5.2.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Aichi_B7A</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="https://tedaliez.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-FFMpeg-Android开发-简单播放音频" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2020/08/29/FFMpeg-Android%E5%BC%80%E5%8F%91-%E7%AE%80%E5%8D%95%E6%92%AD%E6%94%BE%E9%9F%B3%E9%A2%91/" class="article-date">
+  <time datetime="2020-08-29T01:04:55.000Z" itemprop="datePublished">2020-08-29</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      FFMpeg-Android开发-简单播放音频
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>本文部分对应的源代码可参考<a href="https://github.com/TedaLIEz/MyFFMpegAndroid/tree/v1.2" target="_blank" rel="noopener">https://github.com/TedaLIEz/MyFFMpegAndroid/tree/v1.2</a></p>
+<h2 id="具体实现"><a href="#具体实现" class="headerlink" title="具体实现"></a>具体实现</h2><p>音频播放的整个流程和视频非常相似，都经历了下面几个步骤</p>
+<ol>
+<li>解析 container</li>
+<li>根据 container，获得我们关心的媒体数据（例如播放视频，那我们只关心视频媒体）</li>
+<li>根据媒体信息获得对应的解码器</li>
+<li>将对应的数据送给解码器</li>
+<li>解码器解码，输出帧</li>
+<li>将帧渲染到目标区域(播放音频)</li>
+</ol>
+<p>1-5 的步骤几乎可以参考播放视频的流程，这里简单看下不同</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="keyword">auto</span> swr_context = swr_alloc();</span><br><span class="line"><span class="keyword">auto</span> out_buffer = (<span class="keyword">uint8_t</span> *) av_malloc(<span class="number">44100</span> * <span class="number">2</span>);</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment">// expected sample output</span></span><br><span class="line"><span class="keyword">uint64_t</span> out_channel_layout = AV_CH_LAYOUT_STEREO;</span><br><span class="line"><span class="keyword">auto</span> out_format = AV_SAMPLE_FMT_S16;</span><br><span class="line"></span><br><span class="line"><span class="keyword">auto</span> out_sample_rate = audio_codec_context-&gt;sample_rate;</span><br><span class="line"></span><br><span class="line"><span class="comment">// expected sample out para end</span></span><br><span class="line"></span><br><span class="line">swr_alloc_set_opts(swr_context,</span><br><span class="line">    out_channel_layout, out_format, out_sample_rate,</span><br><span class="line">    audio_codec_context-&gt;channel_layout, audio_codec_context-&gt;sample_fmt, audio_codec_context-&gt;sample_rate,</span><br><span class="line"><span class="number">0</span>, <span class="literal">nullptr</span>);</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">swr_init(swr_context);</span><br><span class="line"></span><br><span class="line"><span class="keyword">auto</span> out_channels = av_get_channel_layout_nb_channels(AV_CH_LAYOUT_STEREO);</span><br></pre></td></tr></table></figure>
+<p>这一段的主要目的是配置音频的转码格式，跟视频不同，但基本逻辑一致</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">auto</span> player_class = env-&gt;GetObjectClass(instance);</span><br><span class="line"><span class="keyword">auto</span> create_audio_track_method_id = env-&gt;GetMethodID(player_class, <span class="string">"createAudioTrack"</span>, <span class="string">"(II)V"</span>);</span><br><span class="line">env-&gt;CallVoidMethod(instance, create_audio_track_method_id, <span class="number">44100</span>, out_channels);</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">auto</span> play_audio_track_method_id = env-&gt;GetMethodID(player_class, <span class="string">"playAudioTrack"</span>, <span class="string">"([BI)V"</span>);</span><br></pre></td></tr></table></figure>
+<p>这里我们通过 JNI 来调用 Java 层的 AudioTrack 相关 API 来播放音频</p>
+<p>至此，我们已经完成了音频的播放；接下来就剩下如何同时播放视频和音频，以及音视频同步问题了。下篇文章，我们就会来着手实现一个时间同步的简单播放器</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://tedaliez.github.io/2020/08/29/FFMpeg-Android%E5%BC%80%E5%8F%91-%E7%AE%80%E5%8D%95%E6%92%AD%E6%94%BE%E9%9F%B3%E9%A2%91/" data-id="ckgx4rr770009i8x7ktjqzt3v" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2020/09/12/Kotlin%E5%8D%8F%E7%A8%8B%E5%BC%82%E5%B8%B8%E5%A4%84%E7%90%86/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          Kotlin协程异常处理
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2020/08/23/FFMpeg-Android%E5%BC%80%E5%8F%91-%E7%AE%80%E5%8D%95%E6%92%AD%E6%94%BE%E8%A7%86%E9%A2%91/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">FFMpeg-Android开发-简单播放视频</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/Android-ROOM/" rel="tag">Android, ROOM</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/NDK/" rel="tag">NDK</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/TypeScript/" rel="tag">TypeScript</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/WebAssembly/" rel="tag">WebAssembly</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/WebView-JSBridge/" rel="tag">WebView, JSBridge</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/android/" rel="tag">android</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/android-jetpack-compose/" rel="tag">android, jetpack compose</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/android-mmkv/" rel="tag">android, mmkv</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/android-textview/" rel="tag">android, textview</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/kotlin/" rel="tag">kotlin</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/kotlin-coroutine/" rel="tag">kotlin, coroutine</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/kotlin-%E5%8D%8F%E7%A8%8B/" rel="tag">kotlin, 协程</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/v8-WebAssembly/" rel="tag">v8, WebAssembly</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/Android-ROOM/" style="font-size: 10px;">Android, ROOM</a> <a href="/tags/NDK/" style="font-size: 10px;">NDK</a> <a href="/tags/TypeScript/" style="font-size: 10px;">TypeScript</a> <a href="/tags/WebAssembly/" style="font-size: 15px;">WebAssembly</a> <a href="/tags/WebView-JSBridge/" style="font-size: 10px;">WebView, JSBridge</a> <a href="/tags/android/" style="font-size: 15px;">android</a> <a href="/tags/android-jetpack-compose/" style="font-size: 10px;">android, jetpack compose</a> <a href="/tags/android-mmkv/" style="font-size: 20px;">android, mmkv</a> <a href="/tags/android-textview/" style="font-size: 10px;">android, textview</a> <a href="/tags/kotlin/" style="font-size: 10px;">kotlin</a> <a href="/tags/kotlin-coroutine/" style="font-size: 10px;">kotlin, coroutine</a> <a href="/tags/kotlin-%E5%8D%8F%E7%A8%8B/" style="font-size: 10px;">kotlin, 协程</a> <a href="/tags/v8-WebAssembly/" style="font-size: 10px;">v8, WebAssembly</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/09/">September 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/08/">August 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/07/">July 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/05/">May 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/03/">March 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/02/">February 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/01/">January 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/12/">December 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/11/">November 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/09/">September 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/07/">July 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/06/">June 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/05/">May 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/03/">March 2019</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2020/09/13/FFMpeg-Android%E5%BC%80%E5%8F%91-%E7%AE%80%E5%8D%95%E9%9F%B3%E8%A7%86%E9%A2%91%E5%90%8C%E6%AD%A5/">FFMpeg-Android开发-简单音视频同步</a>
+          </li>
+        
+          <li>
+            <a href="/2020/09/12/Kotlin%E5%8D%8F%E7%A8%8B%E5%BC%82%E5%B8%B8%E5%A4%84%E7%90%86/">Kotlin协程异常处理</a>
+          </li>
+        
+          <li>
+            <a href="/2020/08/29/FFMpeg-Android%E5%BC%80%E5%8F%91-%E7%AE%80%E5%8D%95%E6%92%AD%E6%94%BE%E9%9F%B3%E9%A2%91/">FFMpeg-Android开发-简单播放音频</a>
+          </li>
+        
+          <li>
+            <a href="/2020/08/23/FFMpeg-Android%E5%BC%80%E5%8F%91-%E7%AE%80%E5%8D%95%E6%92%AD%E6%94%BE%E8%A7%86%E9%A2%91/">FFMpeg-Android开发-简单播放视频</a>
+          </li>
+        
+          <li>
+            <a href="/2020/08/22/FFMpeg-Android%E5%BC%80%E5%8F%91-%E8%A7%A3%E6%9E%90%E8%A7%86%E9%A2%91%E6%A0%BC%E5%BC%8F/">FFMpeg-Android开发-解析视频格式</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2020 Jian Guo<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+  </div>
+</body>
+</html>

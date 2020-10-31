@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+
+  
+  <title>Kotlin协程实战 | Aichi_B7A</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="学习路径 协程尝试解决什么问题 如何理解 suspend 关键字 协程中的异常处理 最佳实践  学习路径 https:&#x2F;&#x2F;codelabs.developers.google.com&#x2F;codelabs&#x2F;kotlin-coroutines&#x2F;#0 官方文档 https:&#x2F;&#x2F;kaixue.io&#x2F;kotlin-coroutines-1&#x2F;  下面说下个人理解 协程尝试解决什么问题从编码角度，协程尝试解决了">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Kotlin协程实战">
+<meta property="og:url" content="https://tedaliez.github.io/2019/12/07/Kotlin%E5%8D%8F%E7%A8%8B%E5%AE%9E%E6%88%98/index.html">
+<meta property="og:site_name" content="Aichi_B7A">
+<meta property="og:description" content="学习路径 协程尝试解决什么问题 如何理解 suspend 关键字 协程中的异常处理 最佳实践  学习路径 https:&#x2F;&#x2F;codelabs.developers.google.com&#x2F;codelabs&#x2F;kotlin-coroutines&#x2F;#0 官方文档 https:&#x2F;&#x2F;kaixue.io&#x2F;kotlin-coroutines-1&#x2F;  下面说下个人理解 协程尝试解决什么问题从编码角度，协程尝试解决了">
+<meta property="og:locale">
+<meta property="article:published_time" content="2019-12-07T11:49:40.000Z">
+<meta property="article:modified_time" content="2019-12-07T11:51:49.068Z">
+<meta property="article:author" content="Jian Guo">
+<meta property="article:tag" content="kotlin">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="/atom.xml" title="Aichi_B7A" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+<meta name="generator" content="Hexo 5.2.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Aichi_B7A</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="https://tedaliez.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-Kotlin协程实战" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2019/12/07/Kotlin%E5%8D%8F%E7%A8%8B%E5%AE%9E%E6%88%98/" class="article-date">
+  <time datetime="2019-12-07T11:49:40.000Z" itemprop="datePublished">2019-12-07</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      Kotlin协程实战
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <ul>
+<li><a href="#%e5%ad%a6%e4%b9%a0%e8%b7%af%e5%be%84">学习路径</a></li>
+<li><a href="#%e5%8d%8f%e7%a8%8b%e5%b0%9d%e8%af%95%e8%a7%a3%e5%86%b3%e4%bb%80%e4%b9%88%e9%97%ae%e9%a2%98">协程尝试解决什么问题</a></li>
+<li><a href="#%e5%a6%82%e4%bd%95%e7%90%86%e8%a7%a3-suspend-%e5%85%b3%e9%94%ae%e5%ad%97">如何理解 suspend 关键字</a></li>
+<li><a href="#%e5%8d%8f%e7%a8%8b%e4%b8%ad%e7%9a%84%e5%bc%82%e5%b8%b8%e5%a4%84%e7%90%86">协程中的异常处理</a></li>
+<li><a href="#%e6%9c%80%e4%bd%b3%e5%ae%9e%e8%b7%b5">最佳实践</a></li>
+</ul>
+<h2 id="学习路径"><a href="#学习路径" class="headerlink" title="学习路径"></a>学习路径</h2><ol>
+<li><a href="https://codelabs.developers.google.com/codelabs/kotlin-coroutines/#0" target="_blank" rel="noopener">https://codelabs.developers.google.com/codelabs/kotlin-coroutines/#0</a></li>
+<li>官方文档</li>
+<li><a href="https://kaixue.io/kotlin-coroutines-1/" target="_blank" rel="noopener">https://kaixue.io/kotlin-coroutines-1/</a></li>
+</ol>
+<p>下面说下个人理解</p>
+<h2 id="协程尝试解决什么问题"><a href="#协程尝试解决什么问题" class="headerlink" title="协程尝试解决什么问题"></a>协程尝试解决什么问题</h2><p>从编码角度，协程尝试解决了回调地狱的问题<br>从实现上，协程尝试减少了线程切换的开销</p>
+<h2 id="如何理解-suspend-关键字"><a href="#如何理解-suspend-关键字" class="headerlink" title="如何理解 suspend 关键字"></a>如何理解 suspend 关键字</h2><p>TL;DR:</p>
+<blockquote>
+<p>使用 suspend 包装一个耗时操作，同时将耗时操作用 withContext()包装起来，并指定其要使用的线程</p>
+</blockquote>
+<p>suspend 关键字在 kotlin 中用于函数声明，这里需要做一个说明：</p>
+<pre><code>一个suspend的函数并不代表其不会在主线程上执行
+</code></pre><p>在 Dispatchers.MAIN 的上下文下，你的函数就是会在主线程上执行的</p>
+<p>另外一条说明：</p>
+<pre><code>suspend关键字并不是真正实现挂起
+</code></pre><p>它只是一个提醒，提醒调用者我是一个耗时函数，我被我的创建者用挂起的方式放到后台执行，你需要用协程来调用我</p>
+<p>例如:</p>
+<figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">fun</span> <span class="title">test</span><span class="params">()</span></span> : String &#123;</span><br><span class="line">    viewModelScope.launch &#123;</span><br><span class="line">        Log.d(TAG, <span class="string">"test in IO thread: "</span> + Thread.currentThread())</span><br><span class="line">        delay(<span class="number">1_000</span>)</span><br><span class="line">        Log.d(TAG, <span class="string">"do we really sleep about 1000ms? "</span> + Thread.currentThread())</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="string">"Test"</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">fun</span> <span class="title">onMainViewClicked</span><span class="params">()</span></span> &#123;</span><br><span class="line"></span><br><span class="line">    viewModelScope.launch &#123;</span><br><span class="line">        <span class="keyword">val</span> rst = test()</span><br><span class="line">        _snackBar.postValue(rst)</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>我们说，test()在 viewModelScope.launch 时启动了一个协程，这个线程 delay 了 1000ms 后返回 test，那么这段代码的表现就是</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">2019-12-02 21:21:39.615 21445-21445/com.example.android.kotlincoroutines D/MainViewModel: test in IO thread: Thread[main,5,main]</span><br><span class="line">2019-12-02 21:21:40.620 21445-21445/com.example.android.kotlincoroutines D/MainViewModel: do we really sleep about 1000ms? Thread[main,5,main]</span><br></pre></td></tr></table></figure>
+<p>在第一条日志出现时，_snackBar 就已经调用了 postValue 了，delay 函数并没有阻塞住我们的 viewModelScope</p>
+<p>如果我们希望延时 1s 后 postValue 呢？下面这个写法 ok 吗？</p>
+<figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">fun</span> <span class="title">test</span><span class="params">()</span></span> : String &#123;</span><br><span class="line">    viewModelScope.async &#123;</span><br><span class="line">        Log.d(TAG, <span class="string">"test in IO thread: "</span> + Thread.currentThread())</span><br><span class="line">        delay(<span class="number">1_000</span>)</span><br><span class="line">        Log.d(TAG, <span class="string">"do we really sleep about 1000ms? "</span> + Thread.currentThread())</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="string">"Test"</span></span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Wait one second then display a snackbar.</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">fun</span> <span class="title">onMainViewClicked</span><span class="params">()</span></span> &#123;</span><br><span class="line"></span><br><span class="line">    viewModelScope.launch &#123;</span><br><span class="line">        <span class="keyword">val</span> rst = test()</span><br><span class="line">        _snackBar.postValue(rst)</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>结果和 launch 一致，原因也很简单，因为我们没有对 async 内的协程做任何操作，只是让它执行.</p>
+<p>为了让它等待 1s，就有两种方式</p>
+<ol>
+<li>async#await()</li>
+</ol>
+<figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">suspend</span> <span class="function"><span class="keyword">fun</span> <span class="title">test</span><span class="params">()</span></span> : String &#123;</span><br><span class="line">    viewModelScope.async &#123;</span><br><span class="line">        Log.d(TAG, <span class="string">"test in IO thread: "</span> + Thread.currentThread())</span><br><span class="line">        delay(<span class="number">1_000</span>)</span><br><span class="line">        Log.d(TAG, <span class="string">"do we really sleep about 1000ms? "</span> + Thread.currentThread())</span><br><span class="line">    &#125;.await()</span><br><span class="line">    <span class="keyword">return</span> <span class="string">"Test"</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment">* Wait one second then display a snackbar.</span></span><br><span class="line"><span class="comment">*/</span></span><br><span class="line"><span class="function"><span class="keyword">fun</span> <span class="title">onMainViewClicked</span><span class="params">()</span></span> &#123;</span><br><span class="line"></span><br><span class="line">    viewModelScope.launch &#123;</span><br><span class="line">        <span class="keyword">val</span> rst = test()</span><br><span class="line">        _snackBar.postValue(rst)</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>我们会发现一旦调用了 await()，编译器就会要求我们声明 test 为 suspend 函数，原因很简单。如上文所述，await()是被声明为 suspend，它被声明为耗时函数，那么你需要放在一个 suspend 函数去调用</p>
+<p>结果:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">2019-12-02 21:26:10.198 21809-21809/com.example.android.kotlincoroutines D/MainViewModel: test in IO thread: Thread[main,5,main]</span><br><span class="line">2019-12-02 21:26:11.202 21809-21809/com.example.android.kotlincoroutines D/MainViewModel: do we really sleep about 1000ms? Thread[main,5,main]</span><br></pre></td></tr></table></figure>
+<p>postValue 将会在第二条日志打印时调用，满足延时效果</p>
+<ol start="2">
+<li>withContext()</li>
+</ol>
+<figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">suspend</span> <span class="function"><span class="keyword">fun</span> <span class="title">test</span><span class="params">()</span></span> : String &#123;</span><br><span class="line">    withContext(viewModelScope.coroutineContext) &#123;</span><br><span class="line">        Log.d(TAG, <span class="string">"test in IO thread: "</span> + Thread.currentThread())</span><br><span class="line">        delay(<span class="number">1_000</span>)</span><br><span class="line">        Log.d(TAG, <span class="string">"do we really sleep about 1000ms? "</span> + Thread.currentThread())</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="string">"Test"</span></span><br><span class="line"></span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Wait one second then display a snackbar.</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">fun</span> <span class="title">onMainViewClicked</span><span class="params">()</span></span> &#123;</span><br><span class="line"></span><br><span class="line">    viewModelScope.launch &#123;</span><br><span class="line">        <span class="keyword">val</span> rst = test()</span><br><span class="line">        _snackBar.postValue(rst)</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>效果同 1，但这里可以额外说一下，withContext 允许带返回值，你可以理解就是 async#await()的整合版。</p>
+<p>这里需要对 1 和 2 做一个总结，async 配合 await()和 withContext 到底干了什么？简单来说</p>
+<pre><code>就是帮助你将线程切走，同时当传入的lambda有返回值时，帮你自动切回来
+</code></pre><p>啥意思呢？比如你有下面一段代码:</p>
+<figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="keyword">suspend</span> <span class="function"><span class="keyword">fun</span> <span class="title">getUser</span><span class="params">()</span></span> : User&#123;</span><br><span class="line">    <span class="keyword">return</span> withContext(Dispatchers.IO) &#123;</span><br><span class="line">        <span class="keyword">return</span> network.fetchUser()   <span class="comment">// IO Thread</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">fun</span> <span class="title">showUser</span><span class="params">()</span></span> &#123;</span><br><span class="line">    viewModelScope.launch &#123;</span><br><span class="line">        <span class="keyword">val</span> user = getUser()   <span class="comment">// Main Thread</span></span><br><span class="line">        _user.postValue(user)</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>我们认为<code>network.fetchUser()</code>是一个耗时操作，那么我们用 withContext(Dispatchers.IO)包裹起来，丢给 IO 线程处理，当 network.fetchUser()返回时，withContext 自动将线程切回 MAIN 线程，回到 showUser()的 user 变量处，这里也是 MAIN 线程</p>
+<h2 id="协程中的异常处理"><a href="#协程中的异常处理" class="headerlink" title="协程中的异常处理"></a>协程中的异常处理</h2><p>协程中的异常处理取决于你创建协程的方式</p>
+<p>如果是 launch 创建的协程，异常会立即抛出，同时会导致其树状关系的所有 job 失败，因此你需要在协程内代码自行使用 try-catch</p>
+<p>例如:</p>
+<figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">val</span> job: Job = Job()</span><br><span class="line"><span class="keyword">val</span> scope = CoroutineScope(Dispatchers.Default + job)</span><br><span class="line"><span class="comment">// may throw Exception</span></span><br><span class="line"><span class="function"><span class="keyword">fun</span> <span class="title">doWork</span><span class="params">()</span></span>: Deferred&lt;String&gt; = scope.async &#123; ... &#125;   <span class="comment">// (1)</span></span><br><span class="line"><span class="function"><span class="keyword">fun</span> <span class="title">loadData</span><span class="params">()</span></span> = scope.launch &#123;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        doWork().await()                               <span class="comment">// (2)</span></span><br><span class="line">    &#125; <span class="keyword">catch</span> (e: Exception) &#123; ... &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这个时候(2)中捕获的异常也会立即使其父 job 失败，一种解决方案就是用 SupervisorJob 来作为父 job</p>
+<pre><code>A failure or cancellation of a child does not cause the supervisor job to fail and does not affect its other children.
+</code></pre><p>这么做能捕获的前提是你的 async 也在 SupervisorJob 构造的 scope 中执行，不然也是会 crash 的, 例如:</p>
+<figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">val</span> job = SupervisorJob()</span><br><span class="line"><span class="keyword">val</span> scope = CoroutineScope(Dispatchers.Default + job)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">fun</span> <span class="title">loadData</span><span class="params">()</span></span> = scope.launch &#123;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        async &#123;                                         <span class="comment">// (1)</span></span><br><span class="line">            <span class="comment">// may throw Exception, still crash</span></span><br><span class="line">        &#125;.await()</span><br><span class="line">    &#125; <span class="keyword">catch</span> (e: Exception) &#123; ... &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>另一种解决方案就是使用 coroutineScope 函数包裹你的 async 调用</p>
+<figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">val</span> job = SupervisorJob()</span><br><span class="line"><span class="keyword">val</span> scope = CoroutineScope(Dispatchers.Default + job)</span><br><span class="line"></span><br><span class="line"><span class="comment">// may throw Exception</span></span><br><span class="line"><span class="keyword">suspend</span> <span class="function"><span class="keyword">fun</span> <span class="title">doWork</span><span class="params">()</span></span>: String = coroutineScope &#123;     <span class="comment">// (1)</span></span><br><span class="line">    async &#123; ... &#125;.await()</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">fun</span> <span class="title">loadData</span><span class="params">()</span></span> = scope.launch &#123;                       <span class="comment">// (2)</span></span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        doWork()</span><br><span class="line">    &#125; <span class="keyword">catch</span> (e: Exception) &#123; ... &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>如果是 async 创建的协程，异常会在你调用 await 的位置抛出，如果没有调用 await，不会有抛出异常的可能，因此你需要在 await 调用的位置使用 try-catch</p>
+<p>如果是 withContext 创建的协程，同 launch 的处理</p>
+<p>最后，你都可以创建一个 CoroutineExceptionHandler 对象传入到你的 scope 中来统一处理异常</p>
+<figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">val</span> coroutineExceptionHandler: CoroutineExceptionHandler =</span><br><span class="line">    CoroutineExceptionHandler &#123; _, throwable -&gt;</span><br><span class="line">      <span class="comment">//2</span></span><br><span class="line">      coroutineScope.launch(Dispatchers.Main) &#123;</span><br><span class="line">        <span class="comment">//3</span></span><br><span class="line">        errorMessage.visibility = View.VISIBLE</span><br><span class="line">        errorMessage.text = getString(R.string.error_message)</span><br><span class="line">      &#125;</span><br><span class="line"></span><br><span class="line">      GlobalScope.launch &#123; println(<span class="string">"Caught <span class="variable">$throwable</span>"</span>) &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">val</span> coroutineScope =</span><br><span class="line">    CoroutineScope(Dispatchers.Main + parentJob + coroutineExceptionHandler)</span><br></pre></td></tr></table></figure>
+<h2 id="最佳实践"><a href="#最佳实践" class="headerlink" title="最佳实践"></a>最佳实践</h2><ol>
+<li>实现 suspend 函数时，保证其线程安全，<strong>可以在任何线程(Dispatcher)调用</strong></li>
+</ol>
+<figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">suspend</span> <span class="function"><span class="keyword">fun</span> <span class="title">login</span><span class="params">()</span></span> : Result &#123;</span><br><span class="line">    view.showLoading()</span><br><span class="line"></span><br><span class="line">    <span class="keyword">val</span> result = withContext(Dispatchers.IO) &#123;</span><br><span class="line">        loginBlockingCall()</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    view.hideLoading()</span><br><span class="line">    <span class="keyword">return</span> result</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>上面的 login 有潜在的 crash 风险，调用方极有可能将这个函数放在 non-Main dispatcher 中调用，为了避免这种类型的 crash，请将你的函数设计成线程安全的</p>
+<figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">suspend</span> <span class="function"><span class="keyword">fun</span> <span class="title">login</span><span class="params">()</span></span> : Result = withContext(Dispachers.Main) &#123;</span><br><span class="line">        view.showLoading()</span><br><span class="line"></span><br><span class="line">        <span class="keyword">val</span> result = withContext(Dispatchers.IO) &#123;</span><br><span class="line">            loginBlockingCall()</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        view.hideLoading()</span><br><span class="line">        <span class="keyword">return</span> result</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<ol start="2">
+<li>Android 开发应避免 GlobalScope<br>因为 GlobalScope 是跟随 Application 的生命周期，使用 GlobalScope 下的协程会带来资源泄漏的风险</li>
+</ol>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://tedaliez.github.io/2019/12/07/Kotlin%E5%8D%8F%E7%A8%8B%E5%AE%9E%E6%88%98/" data-id="ckgx4rr7h000ki8x7l915vzp1" class="article-share-link">Share</a>
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/kotlin/" rel="tag">kotlin</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2019/12/21/JSBridge%E8%A7%A3%E6%9E%90/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          JSBridge解析
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2019/11/16/Android%E8%87%AA%E5%AE%9A%E4%B9%89View%E4%B8%AD%E4%B8%80%E4%BA%9B%E5%8F%82%E6%95%B0%E7%9A%84%E5%90%AB%E4%B9%89/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">Android自定义View中一些参数的含义</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/Android-ROOM/" rel="tag">Android, ROOM</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/NDK/" rel="tag">NDK</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/TypeScript/" rel="tag">TypeScript</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/WebAssembly/" rel="tag">WebAssembly</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/WebView-JSBridge/" rel="tag">WebView, JSBridge</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/android/" rel="tag">android</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/android-jetpack-compose/" rel="tag">android, jetpack compose</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/android-mmkv/" rel="tag">android, mmkv</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/android-textview/" rel="tag">android, textview</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/kotlin/" rel="tag">kotlin</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/kotlin-coroutine/" rel="tag">kotlin, coroutine</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/kotlin-%E5%8D%8F%E7%A8%8B/" rel="tag">kotlin, 协程</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/v8-WebAssembly/" rel="tag">v8, WebAssembly</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/Android-ROOM/" style="font-size: 10px;">Android, ROOM</a> <a href="/tags/NDK/" style="font-size: 10px;">NDK</a> <a href="/tags/TypeScript/" style="font-size: 10px;">TypeScript</a> <a href="/tags/WebAssembly/" style="font-size: 15px;">WebAssembly</a> <a href="/tags/WebView-JSBridge/" style="font-size: 10px;">WebView, JSBridge</a> <a href="/tags/android/" style="font-size: 15px;">android</a> <a href="/tags/android-jetpack-compose/" style="font-size: 10px;">android, jetpack compose</a> <a href="/tags/android-mmkv/" style="font-size: 20px;">android, mmkv</a> <a href="/tags/android-textview/" style="font-size: 10px;">android, textview</a> <a href="/tags/kotlin/" style="font-size: 10px;">kotlin</a> <a href="/tags/kotlin-coroutine/" style="font-size: 10px;">kotlin, coroutine</a> <a href="/tags/kotlin-%E5%8D%8F%E7%A8%8B/" style="font-size: 10px;">kotlin, 协程</a> <a href="/tags/v8-WebAssembly/" style="font-size: 10px;">v8, WebAssembly</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/09/">September 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/08/">August 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/07/">July 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/05/">May 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/03/">March 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/02/">February 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/01/">January 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/12/">December 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/11/">November 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/09/">September 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/07/">July 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/06/">June 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/05/">May 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/03/">March 2019</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2020/09/13/FFMpeg-Android%E5%BC%80%E5%8F%91-%E7%AE%80%E5%8D%95%E9%9F%B3%E8%A7%86%E9%A2%91%E5%90%8C%E6%AD%A5/">FFMpeg-Android开发-简单音视频同步</a>
+          </li>
+        
+          <li>
+            <a href="/2020/09/12/Kotlin%E5%8D%8F%E7%A8%8B%E5%BC%82%E5%B8%B8%E5%A4%84%E7%90%86/">Kotlin协程异常处理</a>
+          </li>
+        
+          <li>
+            <a href="/2020/08/29/FFMpeg-Android%E5%BC%80%E5%8F%91-%E7%AE%80%E5%8D%95%E6%92%AD%E6%94%BE%E9%9F%B3%E9%A2%91/">FFMpeg-Android开发-简单播放音频</a>
+          </li>
+        
+          <li>
+            <a href="/2020/08/23/FFMpeg-Android%E5%BC%80%E5%8F%91-%E7%AE%80%E5%8D%95%E6%92%AD%E6%94%BE%E8%A7%86%E9%A2%91/">FFMpeg-Android开发-简单播放视频</a>
+          </li>
+        
+          <li>
+            <a href="/2020/08/22/FFMpeg-Android%E5%BC%80%E5%8F%91-%E8%A7%A3%E6%9E%90%E8%A7%86%E9%A2%91%E6%A0%BC%E5%BC%8F/">FFMpeg-Android开发-解析视频格式</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2020 Jian Guo<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+  </div>
+</body>
+</html>

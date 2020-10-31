@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+
+  
+  <title>FFMpeg-Android开发-简单音视频同步 | Aichi_B7A</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="本文代码可参考代码可以参考https:&#x2F;&#x2F;github.com&#x2F;TedaLIEz&#x2F;MyFFMpegAndroid&#x2F;tree&#x2F;v2.1 我们之前实现了视频和音频的播放，但其中最大的问题是我们的音频和视频之间的播放速度没有同步，视频按照解码的速度，以最快速度进行了上屏，那么很有可能会出现视频播放完后音频还在播放的情况。这次我们就来尝试解决这个问题，正式解决问题前，我们先对一些基本概念做出介绍 FFMp">
+<meta property="og:type" content="article">
+<meta property="og:title" content="FFMpeg-Android开发-简单音视频同步">
+<meta property="og:url" content="https://tedaliez.github.io/2020/09/13/FFMpeg-Android%E5%BC%80%E5%8F%91-%E7%AE%80%E5%8D%95%E9%9F%B3%E8%A7%86%E9%A2%91%E5%90%8C%E6%AD%A5/index.html">
+<meta property="og:site_name" content="Aichi_B7A">
+<meta property="og:description" content="本文代码可参考代码可以参考https:&#x2F;&#x2F;github.com&#x2F;TedaLIEz&#x2F;MyFFMpegAndroid&#x2F;tree&#x2F;v2.1 我们之前实现了视频和音频的播放，但其中最大的问题是我们的音频和视频之间的播放速度没有同步，视频按照解码的速度，以最快速度进行了上屏，那么很有可能会出现视频播放完后音频还在播放的情况。这次我们就来尝试解决这个问题，正式解决问题前，我们先对一些基本概念做出介绍 FFMp">
+<meta property="og:locale">
+<meta property="article:published_time" content="2020-09-13T02:39:03.000Z">
+<meta property="article:modified_time" content="2020-09-13T02:41:40.037Z">
+<meta property="article:author" content="Jian Guo">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="/atom.xml" title="Aichi_B7A" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+<meta name="generator" content="Hexo 5.2.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Aichi_B7A</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="https://tedaliez.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-FFMpeg-Android开发-简单音视频同步" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2020/09/13/FFMpeg-Android%E5%BC%80%E5%8F%91-%E7%AE%80%E5%8D%95%E9%9F%B3%E8%A7%86%E9%A2%91%E5%90%8C%E6%AD%A5/" class="article-date">
+  <time datetime="2020-09-13T02:39:03.000Z" itemprop="datePublished">2020-09-13</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      FFMpeg-Android开发-简单音视频同步
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>本文代码可参考代码可以参考<a href="https://github.com/TedaLIEz/MyFFMpegAndroid/tree/v2.1" target="_blank" rel="noopener">https://github.com/TedaLIEz/MyFFMpegAndroid/tree/v2.1</a></p>
+<p>我们之前实现了视频和音频的播放，但其中最大的问题是我们的音频和视频之间的播放速度没有同步，视频按照解码的速度，以最快速度进行了上屏，那么很有可能会出现视频播放完后音频还在播放的情况。这次我们就来尝试解决这个问题，正式解决问题前，我们先对一些基本概念做出介绍</p>
+<h2 id="FFMpeg-中的-dts-和-pts"><a href="#FFMpeg-中的-dts-和-pts" class="headerlink" title="FFMpeg 中的 dts 和 pts"></a>FFMpeg 中的 dts 和 pts</h2><p>FFmpeg 里有两种时间戳：DTS（Decoding Time Stamp）和 PTS（Presentation Time Stamp）。前者是解码的时间，后者是显示的时间。要仔细理解这两个概念，需要先了解 FFmpeg 中的 packet 和 frame 的概念。</p>
+<p>FFmpeg 中用 AVPacket 结构体来描述解码前或编码后的压缩包，用 AVFrame 结构体来描述解码后或编码前的信号帧。 对于视频来说，AVFrame 就是视频的一帧图像。这帧图像什么时候显示给用户，就取决于它的 PTS。DTS 是 AVPacket 里的一个成员，表示这个压缩包应该什么时候被解码。 如果视频里各帧的编码是按输入顺序（也就是显示顺序）依次进行的，那么解码和显示时间应该是一致的。可事实上，在大多数编解码标准（如 H.264 或 HEVC）中，编码顺序和输入顺序并不一致。 于是才会需要 PTS 和 DTS 这两种不同的时间戳。</p>
+<p>具体到代码中为</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line">AVPacket *packet = av_packet_alloc();</span><br><span class="line">av_init_packet(packet);</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment">// packet-&gt;dts == AV_NOPTS_VALUE</span></span><br><span class="line"><span class="keyword">while</span> (av_read_frame(format_context, packet) &gt;= <span class="number">0</span>) &#123;</span><br><span class="line">    <span class="comment">// do decoding ...</span></span><br><span class="line">    <span class="comment">// packet-&gt;dts != AV_NOPTS_VALUE here</span></span><br><span class="line"></span><br><span class="line">    result = avcodec_send_packet(video_codec_context, packet);</span><br><span class="line">    <span class="keyword">if</span> (result &lt; <span class="number">0</span> &amp;&amp; result != AVERROR(EAGAIN) &amp;&amp; result != AVERROR_EOF) &#123;</span><br><span class="line">        LOGE(<span class="string">"Player Error : codec step 1 fail"</span>);</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    result = avcodec_receive_frame(video_codec_context, frame);</span><br><span class="line">    <span class="keyword">if</span> (result &lt; <span class="number">0</span> &amp;&amp; result != AVERROR_EOF) &#123;</span><br><span class="line">        LOGE(<span class="string">"Player Error : codec step 2 fail"</span>);</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    LOGI(<span class="string">"Frame %c (%d, size=%d) pts %d dts %d key_frame %d [codec_picture_number %d, display_picture_number %d]"</span>,</span><br><span class="line">            av_get_picture_type_char(frame-&gt;pict_type), video_codec_context-&gt;frame_number,</span><br><span class="line">            frame-&gt;pkt_size,</span><br><span class="line">            frame-&gt;pts,</span><br><span class="line">            frame-&gt;pkt_dts,</span><br><span class="line">            frame-&gt;key_frame, frame-&gt;coded_picture_number, frame-&gt;display_picture_number);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>那么为什么要区分 DTS 和 PTS 呢？这里就涉及到编解码标准中编码顺序和输入顺序不一致的问题，这里以 H.264 规范为例举一个例子</p>
+<p>假设有一个解码帧序列为<code>IBP</code>，当解码器对其解码时，解码第一帧肯定是序列中的第一帧 I, 但我们思考一下第二帧，已知 B 帧的解码需要参考前一个 I 帧或 P 帧以及后面一个 P 帧，那么解码的第二帧显然不能是序列中的第二帧 B 帧，而是第三帧 P 帧，因此我们得到了下面的一个 PTS 和 DTS 关系</p>
+<pre><code>PTS: 1 2 3
+DTS: 1 3 2
+</code></pre><p>这里我们就会发现，DTS 和 PTS 是不同的</p>
+<p>DTS 主要用于视频的解码,在解码阶段使用.PTS 主要用于视频的同步和输出.在 display 的时候使用.在没有 B frame 的情况下.DTS 和 PTS 的输出顺序是一样的.</p>
+<h2 id="Timebase"><a href="#Timebase" class="headerlink" title="Timebase"></a>Timebase</h2><p>在 FFMpeg 中，同时还引入了 timebase 这个概念。timebase 用来度量时间尺度，假设 timebase={1, 25}, 那么意味着时间尺度就是 1/25 秒，假设 pts=20，那么在 timebase={1, 25}的情况下。这一帧的时间为<code>(20 * 1/25)s</code></p>
+<p>FFMpeg 中，不同的数据状态对应的 timebase 也不一致。例如，非压缩时的数据(即 YUV 或者其它)，在 ffmpeg 中对应的结构体为 AVFrame,它的 timebase 为 AVCodecContext 的 time_base ,AVRational{1,25}。<br>压缩后的数据(对应的结构体为 AVPacket)对应的 timebase 为 AVStream 的 time_base，AVRational{1,90000}。<br>因为数据状态不同，timebase 不一样，所以我们必须转换，在 1/25 时间刻度下佔 10 格，在 1/90000 下是佔多少格。这就是 pts 的转换。</p>
+<h2 id="利用-pts-实现音视频同步"><a href="#利用-pts-实现音视频同步" class="headerlink" title="利用 pts 实现音视频同步"></a>利用 pts 实现音视频同步</h2><p>当我们得到 timebase 和 pts 数据后，我们就可以通过时间换算来同步视频和音频的播放，考虑到音频的播放速度固定，最简单的做法就是将视频的播放向音频同步。</p>
+<p>我们需要定义一个<code>audio_clock</code>来记录音频播放的时钟</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (index == player-&gt;audio_stream_index) &#123;</span><br><span class="line">    player-&gt;audio_clock = packet-&gt;pts * av_q2d(stream-&gt;time_base);</span><br><span class="line">    LOGD(<span class="string">"SyncPlayer: Playing audio loop"</span>);</span><br><span class="line">    audio_play(player, frame, env);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>然后在视频播放的时候利用这个<code>audio_clock</code>进行一定的 delay</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (index == player-&gt;video_stream_index) &#123;</span><br><span class="line">    <span class="keyword">auto</span> audio_clock = player-&gt;audio_clock;</span><br><span class="line">    <span class="keyword">double</span> timestamp;</span><br><span class="line">    <span class="keyword">if</span> (packet-&gt;pts == AV_NOPTS_VALUE) &#123;</span><br><span class="line">        timestamp = <span class="number">0</span>;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        timestamp = frame-&gt;best_effort_timestamp * av_q2d(stream-&gt;time_base);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">double</span> frame_rate = av_q2d(stream-&gt;avg_frame_rate); <span class="comment">// fps = 1 / stream-&gt;avg_frame_rate</span></span><br><span class="line">    frame_rate += frame-&gt;repeat_pict * (frame_rate * <span class="number">0.5</span>); <span class="comment">// repeat_dict代表当前frame必须delay的时间, extra_delay = repeat_pict / (2*fps)</span></span><br><span class="line">    <span class="keyword">if</span> (timestamp == <span class="number">0.0</span>) &#123;</span><br><span class="line">        usleep(frame_rate * <span class="number">1000</span>);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (<span class="built_in">fabs</span>(timestamp - audio_clock) &gt; AV_SYNC_THRESHOLD_MIN</span><br><span class="line">            &amp;&amp; <span class="built_in">fabs</span>(timestamp - audio_clock) &lt; AV_NOSYNC_THRESHOLD) &#123;</span><br><span class="line">            <span class="keyword">if</span> (timestamp &gt; audio_clock) &#123;</span><br><span class="line">                usleep((<span class="keyword">unsigned</span> <span class="keyword">long</span>)((timestamp - audio_clock)*<span class="number">1000000</span>));</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    video_play(player, frame, env);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>至此，一个简单地音视频播放器就完成了.</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://tedaliez.github.io/2020/09/13/FFMpeg-Android%E5%BC%80%E5%8F%91-%E7%AE%80%E5%8D%95%E9%9F%B3%E8%A7%86%E9%A2%91%E5%90%8C%E6%AD%A5/" data-id="ckgx4rr78000ai8x7e4afq3tf" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+  
+    <a href="/2020/09/12/Kotlin%E5%8D%8F%E7%A8%8B%E5%BC%82%E5%B8%B8%E5%A4%84%E7%90%86/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">Kotlin协程异常处理</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/Android-ROOM/" rel="tag">Android, ROOM</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/NDK/" rel="tag">NDK</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/TypeScript/" rel="tag">TypeScript</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/WebAssembly/" rel="tag">WebAssembly</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/WebView-JSBridge/" rel="tag">WebView, JSBridge</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/android/" rel="tag">android</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/android-jetpack-compose/" rel="tag">android, jetpack compose</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/android-mmkv/" rel="tag">android, mmkv</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/android-textview/" rel="tag">android, textview</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/kotlin/" rel="tag">kotlin</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/kotlin-coroutine/" rel="tag">kotlin, coroutine</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/kotlin-%E5%8D%8F%E7%A8%8B/" rel="tag">kotlin, 协程</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/v8-WebAssembly/" rel="tag">v8, WebAssembly</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/Android-ROOM/" style="font-size: 10px;">Android, ROOM</a> <a href="/tags/NDK/" style="font-size: 10px;">NDK</a> <a href="/tags/TypeScript/" style="font-size: 10px;">TypeScript</a> <a href="/tags/WebAssembly/" style="font-size: 15px;">WebAssembly</a> <a href="/tags/WebView-JSBridge/" style="font-size: 10px;">WebView, JSBridge</a> <a href="/tags/android/" style="font-size: 15px;">android</a> <a href="/tags/android-jetpack-compose/" style="font-size: 10px;">android, jetpack compose</a> <a href="/tags/android-mmkv/" style="font-size: 20px;">android, mmkv</a> <a href="/tags/android-textview/" style="font-size: 10px;">android, textview</a> <a href="/tags/kotlin/" style="font-size: 10px;">kotlin</a> <a href="/tags/kotlin-coroutine/" style="font-size: 10px;">kotlin, coroutine</a> <a href="/tags/kotlin-%E5%8D%8F%E7%A8%8B/" style="font-size: 10px;">kotlin, 协程</a> <a href="/tags/v8-WebAssembly/" style="font-size: 10px;">v8, WebAssembly</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/09/">September 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/08/">August 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/07/">July 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/05/">May 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/03/">March 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/02/">February 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/01/">January 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/12/">December 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/11/">November 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/09/">September 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/07/">July 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/06/">June 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/05/">May 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/03/">March 2019</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2020/09/13/FFMpeg-Android%E5%BC%80%E5%8F%91-%E7%AE%80%E5%8D%95%E9%9F%B3%E8%A7%86%E9%A2%91%E5%90%8C%E6%AD%A5/">FFMpeg-Android开发-简单音视频同步</a>
+          </li>
+        
+          <li>
+            <a href="/2020/09/12/Kotlin%E5%8D%8F%E7%A8%8B%E5%BC%82%E5%B8%B8%E5%A4%84%E7%90%86/">Kotlin协程异常处理</a>
+          </li>
+        
+          <li>
+            <a href="/2020/08/29/FFMpeg-Android%E5%BC%80%E5%8F%91-%E7%AE%80%E5%8D%95%E6%92%AD%E6%94%BE%E9%9F%B3%E9%A2%91/">FFMpeg-Android开发-简单播放音频</a>
+          </li>
+        
+          <li>
+            <a href="/2020/08/23/FFMpeg-Android%E5%BC%80%E5%8F%91-%E7%AE%80%E5%8D%95%E6%92%AD%E6%94%BE%E8%A7%86%E9%A2%91/">FFMpeg-Android开发-简单播放视频</a>
+          </li>
+        
+          <li>
+            <a href="/2020/08/22/FFMpeg-Android%E5%BC%80%E5%8F%91-%E8%A7%A3%E6%9E%90%E8%A7%86%E9%A2%91%E6%A0%BC%E5%BC%8F/">FFMpeg-Android开发-解析视频格式</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2020 Jian Guo<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+  </div>
+</body>
+</html>

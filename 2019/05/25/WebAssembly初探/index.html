@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+
+  
+  <title>WebAssembly初探 | Aichi_B7A</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="开发环境演进 开发环境 Emscripten工具链简述   实战 JS中加载wasm的方式 JS中调用wasm中的函数或类 调用函数 原生实现 Embind能力实现 cwrap或ccall实现调用   引用一个类      开发环境演进目前稳定的webassembly的编译方式都需要通过asm.js来生成wasm(hacking)。LLVM WebAssembly 后端目前还处在研发过程中，没有">
+<meta property="og:type" content="article">
+<meta property="og:title" content="WebAssembly初探">
+<meta property="og:url" content="https://tedaliez.github.io/2019/05/25/WebAssembly%E5%88%9D%E6%8E%A2/index.html">
+<meta property="og:site_name" content="Aichi_B7A">
+<meta property="og:description" content="开发环境演进 开发环境 Emscripten工具链简述   实战 JS中加载wasm的方式 JS中调用wasm中的函数或类 调用函数 原生实现 Embind能力实现 cwrap或ccall实现调用   引用一个类      开发环境演进目前稳定的webassembly的编译方式都需要通过asm.js来生成wasm(hacking)。LLVM WebAssembly 后端目前还处在研发过程中，没有">
+<meta property="og:locale">
+<meta property="og:image" content="https://tedaliez.github.io/2019/05/25/WebAssembly%E5%88%9D%E6%8E%A2/WebAssemblyToolchain.png">
+<meta property="og:image" content="https://tedaliez.github.io/2019/05/25/WebAssembly%E5%88%9D%E6%8E%A2/EmscriptenToolchain.png">
+<meta property="article:published_time" content="2019-05-25T07:56:15.000Z">
+<meta property="article:modified_time" content="2019-05-25T07:56:34.606Z">
+<meta property="article:author" content="Jian Guo">
+<meta property="article:tag" content="WebAssembly">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://tedaliez.github.io/2019/05/25/WebAssembly%E5%88%9D%E6%8E%A2/WebAssemblyToolchain.png">
+  
+    <link rel="alternate" href="/atom.xml" title="Aichi_B7A" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+<meta name="generator" content="Hexo 5.2.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Aichi_B7A</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="https://tedaliez.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-WebAssembly初探" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2019/05/25/WebAssembly%E5%88%9D%E6%8E%A2/" class="article-date">
+  <time datetime="2019-05-25T07:56:15.000Z" itemprop="datePublished">2019-05-25</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      WebAssembly初探
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <ul>
+<li><a href="#%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83%E6%BC%94%E8%BF%9B">开发环境演进</a></li>
+<li><a href="#%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83">开发环境</a><ul>
+<li><a href="#emscripten%E5%B7%A5%E5%85%B7%E9%93%BE%E7%AE%80%E8%BF%B0">Emscripten工具链简述</a></li>
+</ul>
+</li>
+<li><a href="#%E5%AE%9E%E6%88%98">实战</a><ul>
+<li><a href="#js%E4%B8%AD%E5%8A%A0%E8%BD%BDwasm%E7%9A%84%E6%96%B9%E5%BC%8F">JS中加载wasm的方式</a></li>
+<li><a href="#js%E4%B8%AD%E8%B0%83%E7%94%A8wasm%E4%B8%AD%E7%9A%84%E5%87%BD%E6%95%B0%E6%88%96%E7%B1%BB">JS中调用wasm中的函数或类</a><ul>
+<li><a href="#%E8%B0%83%E7%94%A8%E5%87%BD%E6%95%B0">调用函数</a><ul>
+<li><a href="#%E5%8E%9F%E7%94%9F%E5%AE%9E%E7%8E%B0">原生实现</a></li>
+<li><a href="#embind%E8%83%BD%E5%8A%9B%E5%AE%9E%E7%8E%B0">Embind能力实现</a></li>
+<li><a href="#cwrap%E6%88%96ccall%E5%AE%9E%E7%8E%B0%E8%B0%83%E7%94%A8">cwrap或ccall实现调用</a></li>
+</ul>
+</li>
+<li><a href="#%E5%BC%95%E7%94%A8%E4%B8%80%E4%B8%AA%E7%B1%BB">引用一个类</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h2 id="开发环境演进"><a href="#开发环境演进" class="headerlink" title="开发环境演进"></a>开发环境演进</h2><p>目前稳定的webassembly的编译方式都需要通过asm.js来生成wasm(hacking)。LLVM WebAssembly 后端目前还处在研发过程中，没有稳定的版本。</p>
+<p><img src="WebAssemblyToolchain.png" alt></p>
+<p>整个开发环境的演变可以参考下面这两个ppt<br><a href="https://kripken.github.io/talks/emwasm.html" target="_blank" rel="noopener">https://kripken.github.io/talks/emwasm.html</a></p>
+<p><a href="http://kripken.github.io/talks/wasm.html" target="_blank" rel="noopener">http://kripken.github.io/talks/wasm.html</a></p>
+<h2 id="开发环境"><a href="#开发环境" class="headerlink" title="开发环境"></a>开发环境</h2><p>目前最常用的开发工具链是emscripten，emscripten可以将LLVM bitcode编译为javascript(LLVM to web compiler)</p>
+<p>使用Emscripten可以:</p>
+<ol>
+<li>编译C和C++代码为javascript</li>
+<li>将任何可以编译为LLVM bitcode的代码编译为javascript</li>
+<li>编译C/C++ runtimes 代码为javascript</li>
+</ol>
+<p>整个工具已经有了许多大型应用，可以认为是比较稳定的工具链 <a href="https://github.com/emscripten-core/emscripten/wiki/Porting-Examples-and-Demos" target="_blank" rel="noopener">https://github.com/emscripten-core/emscripten/wiki/Porting-Examples-and-Demos</a></p>
+<p>Emscripten同时也支持WebAssembly，默认通过asm2wasm将asm.js转为wasm <a href="https://github.com/WebAssembly/binaryen#cc-source--asm2wasm--webassembly" target="_blank" rel="noopener">https://github.com/WebAssembly/binaryen#cc-source--asm2wasm--webassembly</a></p>
+<p>Emscripten同时也提供了一些标准库的实现和WebAssembly能力的封装，减少我们配置WASM的负担。当然你也可以选择不使用Emscripten提供的能力，采用最原始的方式操作WASM</p>
+<h3 id="Emscripten工具链简述"><a href="#Emscripten工具链简述" class="headerlink" title="Emscripten工具链简述"></a>Emscripten工具链简述</h3><p><img src="EmscriptenToolchain.png" alt></p>
+<p>emcc使用clang将C/C++转为LLVMbitcode，然后使用Emscripten自己的编译器后端Fastcomp将bitcode转为javascript <a href="https://emscripten.org/docs/compiling/WebAssembly.html#llvm-webassembly-backend" target="_blank" rel="noopener">https://emscripten.org/docs/compiling/WebAssembly.html#llvm-webassembly-backend</a></p>
+<h2 id="实战"><a href="#实战" class="headerlink" title="实战"></a>实战</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Aside: When you compile C/C++ normally, you link with the system to provide implementations of the standard library methods your code uses.</span><br><span class="line"></span><br><span class="line">JavaScript doesn&apos;t have these methods—either not with the same signatures or names (e.g, Math.atan in JavaScript vs atan in C), or because it&apos;s conceptually different (think malloc vs JavaScript&apos;s objects and garbage collection)—so Emscripten has to provide them for you.</span><br></pre></td></tr></table></figure>
+<p>ONLY_MY_CODE 标志位用来表示你在编译不需要emcc提供的一些stardard库函数</p>
+<p>但是一般我们都是需要emcc提供的标准库函数的，不然我们连下面这个hello world代码都编译不出来</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;iostream&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">(<span class="keyword">int</span>, <span class="keyword">char</span>**)</span> </span>&#123;</span><br><span class="line">    <span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">"Hello, world!\n"</span>;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>用<code>emcc -o output.js *.cpp -s WASM=1 -s ONLY_MY_CODE=1</code>会提示:</p>
+<figure class="highlight shell"><figcaption><span>script</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">error: undefined symbol: _ZNKSt3__26locale9use_facetERNS0_2idE</span><br><span class="line">warning: To disable errors for undefined symbols use `-s ERROR_ON_UNDEFINED_SYMBOLS=0`</span><br><span class="line">error: undefined symbol: _ZNKSt3__28ios_base6getlocEv</span><br><span class="line">error: undefined symbol: _ZNSt3__212basic_stringIcNS_11char_traitsIcEENS_9allocatorIcEEE6__initEmc</span><br><span class="line">error: undefined symbol: _ZNSt3__212basic_stringIcNS_11char_traitsIcEENS_9allocatorIcEEED1Ev</span><br><span class="line">error: undefined symbol: _ZNSt3__213basic_ostreamIcNS_11char_traitsIcEEE6sentryC1ERS3_</span><br><span class="line">error: undefined symbol: _ZNSt3__213basic_ostreamIcNS_11char_traitsIcEEE6sentryD1Ev</span><br><span class="line">error: undefined symbol: _ZNSt3__26localeD1Ev</span><br><span class="line">error: undefined symbol: _ZNSt3__28ios_base5clearEj</span><br><span class="line">error: undefined symbol: _ZSt9terminatev</span><br><span class="line">error: undefined symbol: __cxa_begin_catch</span><br><span class="line">error: undefined symbol: __gxx_personality_v0</span><br><span class="line">error: undefined symbol: strlen</span><br><span class="line">error: undefined symbol: _ZNSt3__24coutE</span><br><span class="line">error: undefined symbol: _ZNSt3__25ctypeIcE2idE</span><br><span class="line">Error: Aborting compilation due to previous errors</span><br></pre></td></tr></table></figure>
+<p>理由也很简单，因为iostream中用到的标准api没有找到实现</p>
+<p>EXPORTED_FUNCTIONS表示我们希望从js能访问的函数，这个宏一般是我们编译希望不依赖Emscripten library的代码时用到。如果用了Emscripten提供的能力，不需要在编译参数里声明这个参数</p>
+<h3 id="JS中加载wasm的方式"><a href="#JS中加载wasm的方式" class="headerlink" title="JS中加载wasm的方式"></a>JS中加载wasm的方式</h3><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">async</span> <span class="function"><span class="keyword">function</span> <span class="title">createWebAssembly</span>(<span class="params">path, importObject</span>) </span>&#123;</span><br><span class="line">    <span class="keyword">const</span> result = <span class="keyword">await</span> <span class="built_in">window</span>.fetch(path);</span><br><span class="line">    <span class="keyword">const</span> bytes = <span class="keyword">await</span> result.arrayBuffer();</span><br><span class="line">    <span class="keyword">return</span> WebAssembly.instantiate(bytes, importObject);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里有个很关键的概念，importObject</p>
+<p>API文档对这个对象的定义是一个包含需要被import的对象，可以理解为被加载wasm需要的上下文，而这个上下文是非常基础的，可以包含内存大小的定义。</p>
+<p>一个典型的importObject如下</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> memory = <span class="keyword">new</span> WebAssembly.Memory(&#123;<span class="attr">initial</span>: <span class="number">256</span>, <span class="attr">maximum</span>: <span class="number">256</span>&#125;);</span><br><span class="line"><span class="keyword">const</span> env = &#123;</span><br><span class="line">      <span class="string">'abortStackOverflow'</span>: <span class="function"><span class="params">_</span> =&gt;</span> &#123; <span class="keyword">throw</span> <span class="keyword">new</span> <span class="built_in">Error</span>(<span class="string">'overflow'</span>); &#125;,</span><br><span class="line">      <span class="string">'table'</span>: <span class="keyword">new</span> WebAssembly.Table(&#123;<span class="attr">initial</span>: <span class="number">0</span>, <span class="attr">maximum</span>: <span class="number">0</span>, <span class="attr">element</span>: <span class="string">'anyfunc'</span>&#125;),  <span class="comment">// wasm调用JS里的方法的函数表</span></span><br><span class="line">      <span class="string">'__table_base'</span>: <span class="number">0</span>,</span><br><span class="line">      <span class="string">'memory'</span>: memory,</span><br><span class="line">      <span class="string">'__memory_base'</span>: <span class="number">1024</span>,</span><br><span class="line">      <span class="string">'STACKTOP'</span>: <span class="number">0</span>,</span><br><span class="line">      <span class="string">'STACK_MAX'</span>: memory.buffer.byteLength,</span><br><span class="line">&#125;;</span><br><span class="line"><span class="keyword">const</span> importObject = &#123;env&#125;;</span><br></pre></td></tr></table></figure>
+<p>可以看到这个importObject配置了内存相关的内容，wasm的内存模型也是一个线性模型, 配置项配置了整个内存的大小，并区分了栈和堆的内存地址</p>
+<p>上面的方式下，你不能用C/C++标准库的API，但好在Emscripten能够提供这些标准库的实现。Emscripten能够提供下面的能力：</p>
+<ol>
+<li>标准库方法，例如malloc，free等</li>
+<li>利用Emscripten Embind的能力将C++的函数和类暴露到js中</li>
+</ol>
+<h3 id="JS中调用wasm中的函数或类"><a href="#JS中调用wasm中的函数或类" class="headerlink" title="JS中调用wasm中的函数或类"></a>JS中调用wasm中的函数或类</h3><h4 id="调用函数"><a href="#调用函数" class="headerlink" title="调用函数"></a>调用函数</h4><h5 id="原生实现"><a href="#原生实现" class="headerlink" title="原生实现"></a>原生实现</h5><p>这种方式下我们不需要emscripten提供的能力来调用到wasm中的函数</p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">const wa = await createWebAssembly('output.wasm', importObject);</span><br><span class="line">wa.instance.exports.fun();</span><br></pre></td></tr></table></figure>
+<h5 id="Embind能力实现"><a href="#Embind能力实现" class="headerlink" title="Embind能力实现"></a>Embind能力实现</h5><p>emcc编译时默认会生成一个wasm文件和一个js文件，这个js文件就提供了相关的绑定能力，而我们在C++代码中则需要使用EMSCRIPTEN_BINDINGS这个宏</p>
+<p>例如：<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;emscripten/bind.h&gt;</span></span></span><br><span class="line"></span><br><span class="line">emscripten::<span class="function">val <span class="title">mandelbrot</span><span class="params">(<span class="keyword">int</span> w, <span class="keyword">int</span> h, <span class="keyword">double</span> zoom, <span class="keyword">double</span> moveX, <span class="keyword">double</span> moveY)</span></span>;</span><br><span class="line"></span><br><span class="line">EMSCRIPTEN_BINDINGS(hello)</span><br><span class="line">&#123;</span><br><span class="line">        emscripten::function(<span class="string">"mandelbrot"</span>, &amp;mandelbrot);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>我们可以在js中调用函数mandelbrot<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">&lt;script src=&quot;mandelbrot.js&quot;&gt;&lt;/script&gt;</span><br><span class="line">&lt;script&gt;</span><br><span class="line">const mandelbrot = Module.mandelbrot(width, 1, -0.5, 0);</span><br><span class="line">&lt;/script&gt;</span><br></pre></td></tr></table></figure></p>
+<h5 id="cwrap或ccall实现调用"><a href="#cwrap或ccall实现调用" class="headerlink" title="cwrap或ccall实现调用"></a>cwrap或ccall实现调用</h5><p>这种方式依赖cwrap这个emscripten的api来实现</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">"emscripten.h"</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdlib.h&gt;</span></span></span><br><span class="line"></span><br><span class="line">EMSCRIPTEN_KEEPALIVE</span><br><span class="line"><span class="keyword">uint8_t</span>* create_buffer(<span class="keyword">int</span> width, <span class="keyword">int</span> height) &#123;</span><br><span class="line">  <span class="keyword">return</span> <span class="built_in">malloc</span>(width * height * <span class="number">4</span> * <span class="keyword">sizeof</span>(<span class="keyword">uint8_t</span>));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>编译时使用命令<code>emcc -s WASM=1 -s EXTRA_EXPORTED_RUNTIME_METHODS=&#39;[&quot;create_buffer&quot;]&#39; lib.c</code></p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">script</span> <span class="attr">src</span>=<span class="string">"lib.js"</span>&gt;</span><span class="undefined"></span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">script</span>&gt;</span><span class="undefined"></span></span><br><span class="line"><span class="javascript">Module.onRuntimeInitialized = <span class="function"><span class="params">_</span> =&gt;</span> &#123;</span></span><br><span class="line"><span class="javascript">    <span class="keyword">const</span> fib = Module.cwrap(<span class="string">'create_buffer'</span>, <span class="string">'number'</span>, [<span class="string">'number'</span>]);</span></span><br><span class="line"><span class="javascript">    <span class="built_in">console</span>.log(fib(<span class="number">12</span>));</span></span><br><span class="line"><span class="undefined">  &#125;;</span></span><br><span class="line"><span class="undefined"></span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<p><code>EMSCRIPTEN_KEEPALIVE</code>表示提示编译器在优化过程中不要删去函数的代码，因为这个函数后续会被js调用</p>
+<h4 id="引用一个类"><a href="#引用一个类" class="headerlink" title="引用一个类"></a>引用一个类</h4><p>利用Embind，在JS代码中引用c++里的一个类</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;emscripten/bind.h&gt;</span></span></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Mandelbrot</span> &#123;</span></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">emscripten::<span class="function">val <span class="title">nextTile</span><span class="params">()</span></span>;</span><br><span class="line">Mandelbrot(<span class="keyword">int</span> width, <span class="keyword">int</span> height, <span class="keyword">double</span> zoom, <span class="keyword">double</span> moveX, <span class="keyword">double</span> moveY)</span><br><span class="line">      : width(width), height(height), zoom(zoom), moveX(moveX), moveY(moveY) &#123;&#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line">EMSCRIPTEN_BINDINGS(hello) &#123;</span><br><span class="line">  emscripten::class_&lt;Mandelbrot&gt;(<span class="string">"Mandelbrot"</span>)</span><br><span class="line">      .constructor&lt;<span class="keyword">int</span>, <span class="keyword">int</span>, <span class="keyword">double</span>, <span class="keyword">double</span>, <span class="keyword">double</span>&gt;()</span><br><span class="line">      .function(<span class="string">"nextTile"</span>, &amp;Mandelbrot::nextTile);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">script</span> <span class="attr">src</span>=<span class="string">"mandelbrot.js"</span>&gt;</span><span class="undefined"></span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">script</span>&gt;</span><span class="undefined"></span></span><br><span class="line"><span class="javascript"><span class="keyword">const</span> mandelbrot = <span class="keyword">new</span> Module.Mandelbrot(width, height, </span></span><br><span class="line"><span class="undefined">    1, -0.5, 0);</span></span><br><span class="line"><span class="javascript"><span class="keyword">const</span> tile = mandelbrot.nextTile();</span></span><br><span class="line"><span class="undefined"></span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://tedaliez.github.io/2019/05/25/WebAssembly%E5%88%9D%E6%8E%A2/" data-id="ckgx4rr7q000zi8x7shhx1kcy" class="article-share-link">Share</a>
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/WebAssembly/" rel="tag">WebAssembly</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2019/05/31/v8-Android%E4%BA%A4%E5%8F%89%E7%BC%96%E8%AF%91/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          v8 Android交叉编译
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2019/05/25/TypeScript%E4%B8%ADthis%E7%9A%84%E9%97%AE%E9%A2%98/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">TypeScript中this的问题</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/Android-ROOM/" rel="tag">Android, ROOM</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/NDK/" rel="tag">NDK</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/TypeScript/" rel="tag">TypeScript</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/WebAssembly/" rel="tag">WebAssembly</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/WebView-JSBridge/" rel="tag">WebView, JSBridge</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/android/" rel="tag">android</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/android-jetpack-compose/" rel="tag">android, jetpack compose</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/android-mmkv/" rel="tag">android, mmkv</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/android-textview/" rel="tag">android, textview</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/kotlin/" rel="tag">kotlin</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/kotlin-coroutine/" rel="tag">kotlin, coroutine</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/kotlin-%E5%8D%8F%E7%A8%8B/" rel="tag">kotlin, 协程</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/v8-WebAssembly/" rel="tag">v8, WebAssembly</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/Android-ROOM/" style="font-size: 10px;">Android, ROOM</a> <a href="/tags/NDK/" style="font-size: 10px;">NDK</a> <a href="/tags/TypeScript/" style="font-size: 10px;">TypeScript</a> <a href="/tags/WebAssembly/" style="font-size: 15px;">WebAssembly</a> <a href="/tags/WebView-JSBridge/" style="font-size: 10px;">WebView, JSBridge</a> <a href="/tags/android/" style="font-size: 15px;">android</a> <a href="/tags/android-jetpack-compose/" style="font-size: 10px;">android, jetpack compose</a> <a href="/tags/android-mmkv/" style="font-size: 20px;">android, mmkv</a> <a href="/tags/android-textview/" style="font-size: 10px;">android, textview</a> <a href="/tags/kotlin/" style="font-size: 10px;">kotlin</a> <a href="/tags/kotlin-coroutine/" style="font-size: 10px;">kotlin, coroutine</a> <a href="/tags/kotlin-%E5%8D%8F%E7%A8%8B/" style="font-size: 10px;">kotlin, 协程</a> <a href="/tags/v8-WebAssembly/" style="font-size: 10px;">v8, WebAssembly</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/09/">September 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/08/">August 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/07/">July 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/05/">May 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/03/">March 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/02/">February 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/01/">January 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/12/">December 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/11/">November 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/09/">September 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/07/">July 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/06/">June 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/05/">May 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/03/">March 2019</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2020/09/13/FFMpeg-Android%E5%BC%80%E5%8F%91-%E7%AE%80%E5%8D%95%E9%9F%B3%E8%A7%86%E9%A2%91%E5%90%8C%E6%AD%A5/">FFMpeg-Android开发-简单音视频同步</a>
+          </li>
+        
+          <li>
+            <a href="/2020/09/12/Kotlin%E5%8D%8F%E7%A8%8B%E5%BC%82%E5%B8%B8%E5%A4%84%E7%90%86/">Kotlin协程异常处理</a>
+          </li>
+        
+          <li>
+            <a href="/2020/08/29/FFMpeg-Android%E5%BC%80%E5%8F%91-%E7%AE%80%E5%8D%95%E6%92%AD%E6%94%BE%E9%9F%B3%E9%A2%91/">FFMpeg-Android开发-简单播放音频</a>
+          </li>
+        
+          <li>
+            <a href="/2020/08/23/FFMpeg-Android%E5%BC%80%E5%8F%91-%E7%AE%80%E5%8D%95%E6%92%AD%E6%94%BE%E8%A7%86%E9%A2%91/">FFMpeg-Android开发-简单播放视频</a>
+          </li>
+        
+          <li>
+            <a href="/2020/08/22/FFMpeg-Android%E5%BC%80%E5%8F%91-%E8%A7%A3%E6%9E%90%E8%A7%86%E9%A2%91%E6%A0%BC%E5%BC%8F/">FFMpeg-Android开发-解析视频格式</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2020 Jian Guo<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+  </div>
+</body>
+</html>

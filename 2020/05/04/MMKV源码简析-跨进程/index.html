@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+
+  
+  <title>MMKV源码简析---跨进程 | Aichi_B7A</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="MMKV 一个重要特性就是增加了 android 侧对跨进程读写的支持，我们单独用一篇文章来分析一下 MMKV 对跨进程存储的实现方式典型的初始化调用如下: 1234MMKV mmkv &#x3D; MMKV.mmkvWithID(MMKV_ID, MMKV.MULTI_PROCESS_MODE, CryptKey);mmkv.encode(...)mmkv.decode(...) MMKV 会把每个文件都">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MMKV源码简析---跨进程">
+<meta property="og:url" content="https://tedaliez.github.io/2020/05/04/MMKV%E6%BA%90%E7%A0%81%E7%AE%80%E6%9E%90-%E8%B7%A8%E8%BF%9B%E7%A8%8B/index.html">
+<meta property="og:site_name" content="Aichi_B7A">
+<meta property="og:description" content="MMKV 一个重要特性就是增加了 android 侧对跨进程读写的支持，我们单独用一篇文章来分析一下 MMKV 对跨进程存储的实现方式典型的初始化调用如下: 1234MMKV mmkv &#x3D; MMKV.mmkvWithID(MMKV_ID, MMKV.MULTI_PROCESS_MODE, CryptKey);mmkv.encode(...)mmkv.decode(...) MMKV 会把每个文件都">
+<meta property="og:locale">
+<meta property="article:published_time" content="2020-05-04T07:23:07.000Z">
+<meta property="article:modified_time" content="2020-05-04T07:25:25.023Z">
+<meta property="article:author" content="Jian Guo">
+<meta property="article:tag" content="android, mmkv">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="/atom.xml" title="Aichi_B7A" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+<meta name="generator" content="Hexo 5.2.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Aichi_B7A</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="https://tedaliez.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-MMKV源码简析-跨进程" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2020/05/04/MMKV%E6%BA%90%E7%A0%81%E7%AE%80%E6%9E%90-%E8%B7%A8%E8%BF%9B%E7%A8%8B/" class="article-date">
+  <time datetime="2020-05-04T07:23:07.000Z" itemprop="datePublished">2020-05-04</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      MMKV源码简析---跨进程
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>MMKV 一个重要特性就是增加了 android 侧对跨进程读写的支持，我们单独用一篇文章来分析一下 MMKV 对跨进程存储的实现方式<br>典型的初始化调用如下:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">MMKV mmkv = MMKV.mmkvWithID(MMKV_ID, MMKV.MULTI_PROCESS_MODE, CryptKey);</span><br><span class="line"></span><br><span class="line">mmkv.encode(...)</span><br><span class="line">mmkv.decode(...)</span><br></pre></td></tr></table></figure>
+<p>MMKV 会把每个文件都通过 mmap 到进程的访问空间，因此每个进程本身就可以直接访问存储，但这里没有解决跨进程的并发访问问题，解决并发需要别的手段，我们看看 MMKV.MULTI_PROCESS_MODE 造成了什么影响</p>
+<h2 id="MMKV-MULTI-PROCESS-MODE"><a href="#MMKV-MULTI-PROCESS-MODE" class="headerlink" title="MMKV.MULTI_PROCESS_MODE"></a>MMKV.MULTI_PROCESS_MODE</h2><p>参考初始化流程的代码和<code>MMKV.MULTI_PROCESS_MODE=2</code>, 来到 MMKV 构造函数, 可以发现此时 MMKV::m_isInterProcess=true, 这个对代码逻辑有什么影响呢?</p>
+<ol>
+<li>checkLoadData 的后半段代码会执行</li>
+<li>m_sharedProcessLock, m_exclusiveProcessLock 全部 enable</li>
+</ol>
+<p>先来看看 checkLoadData 的后半段代码是啥</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (!m_isInterProcess) &#123;</span><br><span class="line">    <span class="keyword">return</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> (!m_metaFile-&gt;isFileValid()) &#123;</span><br><span class="line">    <span class="keyword">return</span>;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// <span class="doctag">TODO:</span> atomic lock m_metaFile?</span></span><br><span class="line">MMKVMetaInfo metaInfo;</span><br><span class="line">metaInfo.read(m_metaFile-&gt;getMemory()); <span class="comment">// 文件m_metaFile被mmap，每个进程都能读到, 但是m_metaInfo是内存对象，没有被进程共享，因此有可能存储的元数据和文件中的元数据不一致</span></span><br><span class="line"><span class="keyword">if</span> (m_metaInfo-&gt;m_sequence != metaInfo.m_sequence) &#123;</span><br><span class="line">    MMKVInfo(<span class="string">"[%s] oldSeq %u, newSeq %u"</span>, m_mmapID.c_str(), m_metaInfo-&gt;m_sequence, metaInfo.m_sequence);</span><br><span class="line">    SCOPED_LOCK(m_sharedProcessLock);</span><br><span class="line"></span><br><span class="line">    clearMemoryCache();</span><br><span class="line">    loadFromFile();</span><br><span class="line">    notifyContentChanged();</span><br><span class="line">&#125; <span class="keyword">else</span> <span class="keyword">if</span> (m_metaInfo-&gt;m_crcDigest != metaInfo.m_crcDigest) &#123;</span><br><span class="line">    MMKVDebug(<span class="string">"[%s] oldCrc %u, newCrc %u, new actualSize %u"</span>, m_mmapID.c_str(), m_metaInfo-&gt;m_crcDigest,</span><br><span class="line">                metaInfo.m_crcDigest, metaInfo.m_actualSize);</span><br><span class="line">    SCOPED_LOCK(m_sharedProcessLock);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">size_t</span> fileSize = m_file-&gt;getActualFileSize();</span><br><span class="line">    <span class="keyword">if</span> (m_file-&gt;getFileSize() != fileSize) &#123;</span><br><span class="line">        MMKVInfo(<span class="string">"file size has changed [%s] from %zu to %zu"</span>, m_mmapID.c_str(), m_file-&gt;getFileSize(), fileSize);</span><br><span class="line">        clearMemoryCache();</span><br><span class="line">        loadFromFile();</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        partialLoadFromFile();</span><br><span class="line">    &#125;</span><br><span class="line">    notifyContentChanged();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>相比较于单进程，这里增加了对内存中的 meta 和文件的 meta 的 seq 和 crc 校验比较，如果不相等，则需要走文件重新加载逻辑，这一块，和<a href="https://github.com/Tencent/MMKV/wiki/android_ipc#%E7%8A%B6%E6%80%81%E5%90%8C%E6%AD%A5" target="_blank" rel="noopener">https://github.com/Tencent/MMKV/wiki/android_ipc#%E7%8A%B6%E6%80%81%E5%90%8C%E6%AD%A5</a>描述是一致的</p>
+<p>m_sharedProcessLock, m_exclusiveProcessLock 全部 enable 应该就是使锁生效，那么分析一下这个锁是如何实现跨进程锁的</p>
+<h2 id="InterProcessLock"><a href="#InterProcessLock" class="headerlink" title="InterProcessLock"></a>InterProcessLock</h2><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">InterProcessLock</span> &#123;</span></span><br><span class="line">    FileLock *m_fileLock;</span><br><span class="line">    LockType m_lockType;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    InterProcessLock(FileLock *fileLock, LockType lockType)</span><br><span class="line">        : m_fileLock(fileLock), m_lockType(lockType), m_enable(<span class="literal">true</span>) &#123;</span><br><span class="line">        MMKV_ASSERT(m_fileLock);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">bool</span> m_enable;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">lock</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (m_enable) &#123;</span><br><span class="line">            m_fileLock-&gt;lock(m_lockType);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"><span class="comment">// ...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>可以看到，MMKV 的跨进程锁是基于文件锁实现的, <code>InterProcessLock#lock</code>基于<code>FileLock.lock</code>实现, 一路转发来到<code>FileLock::platformLock()</code></p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="keyword">bool</span> FileLock::doLock(LockType lockType, <span class="keyword">bool</span> wait) &#123;</span><br><span class="line">    <span class="keyword">if</span> (!isFileLockValid()) &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">bool</span> unLockFirstIfNeeded = <span class="literal">false</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (lockType == SharedLockType) &#123;</span><br><span class="line">        <span class="comment">// don't want shared-lock to break any existing locks</span></span><br><span class="line">        <span class="keyword">if</span> (m_sharedLockCount &gt; <span class="number">0</span> || m_exclusiveLockCount &gt; <span class="number">0</span>) &#123;</span><br><span class="line">            m_sharedLockCount++;</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="comment">// don't want exclusive-lock to break existing exclusive-locks</span></span><br><span class="line">        <span class="keyword">if</span> (m_exclusiveLockCount &gt; <span class="number">0</span>) &#123;</span><br><span class="line">            m_exclusiveLockCount++;</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// prevent deadlock</span></span><br><span class="line">        <span class="keyword">if</span> (m_sharedLockCount &gt; <span class="number">0</span>) &#123;</span><br><span class="line">            unLockFirstIfNeeded = <span class="literal">true</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">auto</span> ret = platformLock(lockType, wait, unLockFirstIfNeeded);</span><br><span class="line">    <span class="keyword">if</span> (ret) &#123;</span><br><span class="line">        <span class="keyword">if</span> (lockType == SharedLockType) &#123;</span><br><span class="line">            m_sharedLockCount++;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            m_exclusiveLockCount++;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> ret;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">bool</span> FileLock::platformLock(LockType lockType, <span class="keyword">bool</span> wait, <span class="keyword">bool</span> unLockFirstIfNeeded) &#123;</span><br><span class="line"><span class="meta">#    <span class="meta-keyword">ifdef</span> MMKV_ANDROID</span></span><br><span class="line">    <span class="keyword">if</span> (m_isAshmem) &#123;</span><br><span class="line">        <span class="keyword">return</span> ashmemLock(lockType, wait, unLockFirstIfNeeded);</span><br><span class="line">    &#125;</span><br><span class="line"><span class="meta">#    <span class="meta-keyword">endif</span></span></span><br><span class="line">    <span class="keyword">auto</span> realLockType = LockType2FlockType(lockType);</span><br><span class="line">    <span class="keyword">auto</span> cmd = wait ? realLockType : (realLockType | LOCK_NB);</span><br><span class="line">    <span class="keyword">if</span> (unLockFirstIfNeeded) &#123;</span><br><span class="line">        <span class="comment">// try lock</span></span><br><span class="line">        <span class="keyword">auto</span> ret = flock(m_fd, realLockType | LOCK_NB);</span><br><span class="line">        <span class="keyword">if</span> (ret == <span class="number">0</span>) &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// let's be gentleman: unlock my shared-lock to prevent deadlock</span></span><br><span class="line">        ret = flock(m_fd, LOCK_UN);</span><br><span class="line">        <span class="keyword">if</span> (ret != <span class="number">0</span>) &#123;</span><br><span class="line">            MMKVError(<span class="string">"fail to try unlock first fd=%d, ret=%d, error:%s"</span>, m_fd, ret, strerror(errno));</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">auto</span> ret = flock(m_fd, cmd);</span><br><span class="line">    <span class="keyword">if</span> (ret != <span class="number">0</span>) &#123;</span><br><span class="line">        MMKVError(<span class="string">"fail to lock fd=%d, ret=%d, error:%s"</span>, m_fd, ret, strerror(errno));</span><br><span class="line">        <span class="comment">// try recover my shared-lock</span></span><br><span class="line">        <span class="keyword">if</span> (unLockFirstIfNeeded) &#123;</span><br><span class="line">            ret = flock(m_fd, LockType2FlockType(SharedLockType));</span><br><span class="line">            <span class="keyword">if</span> (ret != <span class="number">0</span>) &#123;</span><br><span class="line">                <span class="comment">// let's hope this never happen</span></span><br><span class="line">                MMKVError(<span class="string">"fail to recover shared-lock fd=%d, ret=%d, error:%s"</span>, m_fd, ret, strerror(errno));</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>可以看到 MMKV 在文件锁 flock 的基础上，增加了一套计数器机制(代码中的 m_sharedLockCount 和 m_exclusiveLockCount)，来确保</p>
+<ol>
+<li>锁的重入特性</li>
+<li>锁的共享和互斥性转换特性</li>
+</ol>
+<p>关于文件锁的细节，可以参考<a href="https://gavv.github.io/articles/file-locks" target="_blank" rel="noopener">https://gavv.github.io/articles/file-locks</a></p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://tedaliez.github.io/2020/05/04/MMKV%E6%BA%90%E7%A0%81%E7%AE%80%E6%9E%90-%E8%B7%A8%E8%BF%9B%E7%A8%8B/" data-id="ckgx4rr7n000ti8x7m1vin86x" class="article-share-link">Share</a>
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/android-mmkv/" rel="tag">android, mmkv</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2020/07/25/Jetpack-Compose%E7%AE%80%E4%BB%8B%E4%B8%8E%E6%80%9D%E8%80%83/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          Jetpack Compose简介与思考
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2020/05/04/MMKV%E6%BA%90%E7%A0%81%E7%AE%80%E6%9E%90-%E8%AF%BB%E5%86%99/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">MMKV源码简析---读写</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/Android-ROOM/" rel="tag">Android, ROOM</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/NDK/" rel="tag">NDK</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/TypeScript/" rel="tag">TypeScript</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/WebAssembly/" rel="tag">WebAssembly</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/WebView-JSBridge/" rel="tag">WebView, JSBridge</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/android/" rel="tag">android</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/android-jetpack-compose/" rel="tag">android, jetpack compose</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/android-mmkv/" rel="tag">android, mmkv</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/android-textview/" rel="tag">android, textview</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/kotlin/" rel="tag">kotlin</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/kotlin-coroutine/" rel="tag">kotlin, coroutine</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/kotlin-%E5%8D%8F%E7%A8%8B/" rel="tag">kotlin, 协程</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/v8-WebAssembly/" rel="tag">v8, WebAssembly</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/Android-ROOM/" style="font-size: 10px;">Android, ROOM</a> <a href="/tags/NDK/" style="font-size: 10px;">NDK</a> <a href="/tags/TypeScript/" style="font-size: 10px;">TypeScript</a> <a href="/tags/WebAssembly/" style="font-size: 15px;">WebAssembly</a> <a href="/tags/WebView-JSBridge/" style="font-size: 10px;">WebView, JSBridge</a> <a href="/tags/android/" style="font-size: 15px;">android</a> <a href="/tags/android-jetpack-compose/" style="font-size: 10px;">android, jetpack compose</a> <a href="/tags/android-mmkv/" style="font-size: 20px;">android, mmkv</a> <a href="/tags/android-textview/" style="font-size: 10px;">android, textview</a> <a href="/tags/kotlin/" style="font-size: 10px;">kotlin</a> <a href="/tags/kotlin-coroutine/" style="font-size: 10px;">kotlin, coroutine</a> <a href="/tags/kotlin-%E5%8D%8F%E7%A8%8B/" style="font-size: 10px;">kotlin, 协程</a> <a href="/tags/v8-WebAssembly/" style="font-size: 10px;">v8, WebAssembly</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/09/">September 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/08/">August 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/07/">July 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/05/">May 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/03/">March 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/02/">February 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/01/">January 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/12/">December 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/11/">November 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/09/">September 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/07/">July 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/06/">June 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/05/">May 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/03/">March 2019</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2020/09/13/FFMpeg-Android%E5%BC%80%E5%8F%91-%E7%AE%80%E5%8D%95%E9%9F%B3%E8%A7%86%E9%A2%91%E5%90%8C%E6%AD%A5/">FFMpeg-Android开发-简单音视频同步</a>
+          </li>
+        
+          <li>
+            <a href="/2020/09/12/Kotlin%E5%8D%8F%E7%A8%8B%E5%BC%82%E5%B8%B8%E5%A4%84%E7%90%86/">Kotlin协程异常处理</a>
+          </li>
+        
+          <li>
+            <a href="/2020/08/29/FFMpeg-Android%E5%BC%80%E5%8F%91-%E7%AE%80%E5%8D%95%E6%92%AD%E6%94%BE%E9%9F%B3%E9%A2%91/">FFMpeg-Android开发-简单播放音频</a>
+          </li>
+        
+          <li>
+            <a href="/2020/08/23/FFMpeg-Android%E5%BC%80%E5%8F%91-%E7%AE%80%E5%8D%95%E6%92%AD%E6%94%BE%E8%A7%86%E9%A2%91/">FFMpeg-Android开发-简单播放视频</a>
+          </li>
+        
+          <li>
+            <a href="/2020/08/22/FFMpeg-Android%E5%BC%80%E5%8F%91-%E8%A7%A3%E6%9E%90%E8%A7%86%E9%A2%91%E6%A0%BC%E5%BC%8F/">FFMpeg-Android开发-解析视频格式</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2020 Jian Guo<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+  </div>
+</body>
+</html>

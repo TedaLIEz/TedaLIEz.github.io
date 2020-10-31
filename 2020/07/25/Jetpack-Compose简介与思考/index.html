@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+
+  
+  <title>Jetpack Compose简介与思考 | Aichi_B7A</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="Jetpack Compose可以认为是Android对UI代码架构的演进，核心目的是为了让安卓自身的UI代码能够跟随现代UI开发的步伐 现代UI开发的特性现代UI开发的一个重要特点在于其代码为声明式的代码结构，从数学关系上来看，UI的代码构成可以描述为对某一时刻状态的一个函数，即UI&#x3D;F(n)，其中n表示了当前的交互状态。参考MVVM的设计来说，这个状态可以由ViewModel来管理 安卓的UI">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Jetpack Compose简介与思考">
+<meta property="og:url" content="https://tedaliez.github.io/2020/07/25/Jetpack-Compose%E7%AE%80%E4%BB%8B%E4%B8%8E%E6%80%9D%E8%80%83/index.html">
+<meta property="og:site_name" content="Aichi_B7A">
+<meta property="og:description" content="Jetpack Compose可以认为是Android对UI代码架构的演进，核心目的是为了让安卓自身的UI代码能够跟随现代UI开发的步伐 现代UI开发的特性现代UI开发的一个重要特点在于其代码为声明式的代码结构，从数学关系上来看，UI的代码构成可以描述为对某一时刻状态的一个函数，即UI&#x3D;F(n)，其中n表示了当前的交互状态。参考MVVM的设计来说，这个状态可以由ViewModel来管理 安卓的UI">
+<meta property="og:locale">
+<meta property="article:published_time" content="2020-07-25T01:22:01.000Z">
+<meta property="article:modified_time" content="2020-07-25T01:22:31.815Z">
+<meta property="article:author" content="Jian Guo">
+<meta property="article:tag" content="android, jetpack compose">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="/atom.xml" title="Aichi_B7A" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+<meta name="generator" content="Hexo 5.2.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Aichi_B7A</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="https://tedaliez.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-Jetpack-Compose简介与思考" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2020/07/25/Jetpack-Compose%E7%AE%80%E4%BB%8B%E4%B8%8E%E6%80%9D%E8%80%83/" class="article-date">
+  <time datetime="2020-07-25T01:22:01.000Z" itemprop="datePublished">2020-07-25</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      Jetpack Compose简介与思考
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>Jetpack Compose可以认为是Android对UI代码架构的演进，核心目的是为了让安卓自身的UI代码能够跟随现代UI开发的步伐</p>
+<h2 id="现代UI开发的特性"><a href="#现代UI开发的特性" class="headerlink" title="现代UI开发的特性"></a>现代UI开发的特性</h2><p>现代UI开发的一个重要特点在于其代码为声明式的代码结构，从数学关系上来看，UI的代码构成可以描述为对某一时刻状态的一个函数，即<code>UI=F(n)</code>，其中n表示了当前的交互状态。参考MVVM的设计来说，这个状态可以由ViewModel来管理</p>
+<h2 id="安卓的UI开发现状"><a href="#安卓的UI开发现状" class="headerlink" title="安卓的UI开发现状"></a>安卓的UI开发现状</h2><p>安卓的UI开发思路和代码结构已经明显老化，主要体现在下面一些方面:</p>
+<ol>
+<li>仍旧有xml这样的配置文件，即使出现了ViewBinding也无济于事</li>
+<li>构建UI时有大量的命令式代码，这种代码散落在Activity/Fragment中，不利于维护</li>
+</ol>
+<h2 id="命令式编程与声明式编程的争论"><a href="#命令式编程与声明式编程的争论" class="headerlink" title="命令式编程与声明式编程的争论"></a>命令式编程与声明式编程的争论</h2><p>命令式编程风格的问题在于程序非常依赖过程，换言之，如果代码编写的顺序出错，那么程序也会出错；而声明式编程则是只关心结果，编写代码时，只需要把开发者最终想要的结果直接写入代码，如果需要变化，则直接修改你的声明代码。并且声明式风格的UI代码在状态改变的任意时刻都是<strong>同一套代码</strong>构建UI, 这有助于提升代码质量</p>
+<p>声明式风格编码特点在于:</p>
+<pre><code>Describe your UI right now. For any value of now.
+</code></pre><p>这种风格是一种状态无关代码(status independent)</p>
+<h2 id="Jetpack-Compose"><a href="#Jetpack-Compose" class="headerlink" title="Jetpack Compose"></a>Jetpack Compose</h2><p>Jetpack Compose的目的就在于改变现有的UI开发思路，完全向声明式函数演进，同时提供了一些便捷功能，例如一个常规的UI声明如下:</p>
+<figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">MainActivity</span> : <span class="type">AppCompatActivity</span></span>() &#123;</span><br><span class="line">    <span class="keyword">override</span> <span class="function"><span class="keyword">fun</span> <span class="title">onCreate</span><span class="params">(savedInstanceState: <span class="type">Bundle</span>?)</span></span> &#123;</span><br><span class="line">        <span class="keyword">super</span>.onCreate(savedInstanceState)</span><br><span class="line">        setContentView(R.layout.activity_main)</span><br><span class="line">        findViewById&lt;TextView&gt;(R.id.tv).text = <span class="string">"Android"</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>对于复杂的UI界面，这种UI代码的编码方式是可以极其零散的, 可能一部分写在xml里面，一部分又写在代码里，同时代码里的编码可以任意地乱序（命令式代码的弊端）。而Compose出现后，我们的编码方式就可以变化为</p>
+<figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">MainActivity</span> : <span class="type">AppCompatActivity</span></span>() &#123;</span><br><span class="line">    <span class="keyword">override</span> <span class="function"><span class="keyword">fun</span> <span class="title">onCreate</span><span class="params">(savedInstanceState: <span class="type">Bundle</span>?)</span></span> &#123;</span><br><span class="line">        <span class="keyword">super</span>.onCreate(savedInstanceState)</span><br><span class="line">        setContent &#123;</span><br><span class="line">            MyApp &#123;</span><br><span class="line">                Greeting(name = <span class="string">"Android"</span>)</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="meta">@Composable</span></span><br><span class="line"><span class="function"><span class="keyword">fun</span> <span class="title">MyApp</span><span class="params">(content: @<span class="type">Composable</span>()</span></span> () -&gt; <span class="built_in">Unit</span>) &#123;</span><br><span class="line">    MaterialTheme &#123;</span><br><span class="line">        content()</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="meta">@Composable</span></span><br><span class="line"><span class="function"><span class="keyword">fun</span> <span class="title">Greeting</span><span class="params">(name: <span class="type">String</span>)</span></span> &#123;</span><br><span class="line">    Surface(color = Color.Yellow) &#123;</span><br><span class="line">        Text(text = <span class="string">"Hello <span class="variable">$name</span>!"</span>, modifier = Modifier.padding(<span class="number">24</span>.dp))</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>乍一看这种编码风格非常像Flutter，React，Vue的UI代码风格，本质上这些前端框架的UI设计都遵循了声明式函数风格，通过将编码方式转化为声明式函数风格后，我们间接地获得了以下收益</p>
+<ol>
+<li>各个函数独立，复用性提升</li>
+<li>UI代码紧凑</li>
+</ol>
+<p>复用性提升的直接效果之一就是我们可以在IDE里面直接preview UI效果，这个也是Android Studio 4.2后内置的能力，只需要给你的<code>@Composable</code>函数加上一个<code>@Preview</code>标签并进行编译，这个函数自己的UI效果就能直接在IDE上展示</p>
+<p>UI代码紧凑则明确了任何对UI的修改都有唯一的入口，例如在上面的例子中，<code>Activity</code>中一定是<code>setContent</code></p>
+<h3 id="Jetpack-Compose的状态管理"><a href="#Jetpack-Compose的状态管理" class="headerlink" title="Jetpack Compose的状态管理"></a>Jetpack Compose的状态管理</h3><p>声明式风格的UI都面临一个问题就是如何处理状态改变，Jetpack Compose和其他常见的声明式UI框架一致，采用了state这个概念，通过声明一个state对象，我们根据这个state对象构造自己的UI和其子View，当state改变时，动态的改变这个UI的声明，例如:</p>
+<figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Composable</span></span><br><span class="line"><span class="function"><span class="keyword">fun</span> <span class="title">MyScreenContent</span><span class="params">()</span></span> &#123;</span><br><span class="line">    <span class="keyword">val</span> counterState = state &#123; <span class="number">0</span> &#125;</span><br><span class="line">    Counter(</span><br><span class="line">        count = counterState.value,</span><br><span class="line">        updateCount = &#123; newCount -&gt;</span><br><span class="line">            counterState.value = newCount</span><br><span class="line">        &#125;</span><br><span class="line">    )</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="meta">@Composable</span></span><br><span class="line"><span class="function"><span class="keyword">fun</span> <span class="title">Counter</span><span class="params">(count: <span class="type">Int</span>, updateCount: (<span class="type">Int</span>)</span></span> -&gt; <span class="built_in">Unit</span>) &#123;</span><br><span class="line">    Button(onClick = &#123; updateCount(count+<span class="number">1</span>) &#125;) &#123;</span><br><span class="line">        Text(<span class="string">"I've been clicked <span class="variable">$count</span> times"</span>)</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这个例子中，我们就能发现<code>MyScreenContent</code>中内含了一个counterState对象，它通过counterState构建了一个Counter，而Counter也是counterState的一个函数，当counterState变化时，Counter也会重新构建，UI因此也发生变化</p>
+<h3 id="Jetpack-Compose中Lifecycle"><a href="#Jetpack-Compose中Lifecycle" class="headerlink" title="Jetpack Compose中Lifecycle"></a>Jetpack Compose中Lifecycle</h3><p>Android开发非常强调Lifecycle-aware，compose也是如此。为此Jetpack Compose提出了Efforts这个概念，在这个概念中提供了onCommit, onPreCommit, onActive, onDispose一系列函数，用来监听生命周期变化</p>
+<h2 id="感想和思考"><a href="#感想和思考" class="headerlink" title="感想和思考"></a>感想和思考</h2><p>似乎在UI开发上，声明式编程已经成为了主流的方向。随着SwiftUI，Flutter，Jetpack Compose的出现，越来越多的新兴UI开发框架抛弃了现有的MVC，MVP模式，而走向声明式UI方向，随着声明式UI被引入移动端开发，新兴的MVI模式也进入了大众视野，并逐渐被人们接受</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://tedaliez.github.io/2020/07/25/Jetpack-Compose%E7%AE%80%E4%BB%8B%E4%B8%8E%E6%80%9D%E8%80%83/" data-id="ckgx4rr7g000ii8x71igqkp71" class="article-share-link">Share</a>
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/android-jetpack-compose/" rel="tag">android, jetpack compose</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2020/08/15/FFMpeg-Android%E5%BC%80%E5%8F%91101-%E7%BC%96%E8%AF%91%E5%92%8C%E5%BC%95%E5%85%A5/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          FFMpeg Android开发101-编译和引入
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2020/05/04/MMKV%E6%BA%90%E7%A0%81%E7%AE%80%E6%9E%90-%E8%B7%A8%E8%BF%9B%E7%A8%8B/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">MMKV源码简析---跨进程</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/Android-ROOM/" rel="tag">Android, ROOM</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/NDK/" rel="tag">NDK</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/TypeScript/" rel="tag">TypeScript</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/WebAssembly/" rel="tag">WebAssembly</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/WebView-JSBridge/" rel="tag">WebView, JSBridge</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/android/" rel="tag">android</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/android-jetpack-compose/" rel="tag">android, jetpack compose</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/android-mmkv/" rel="tag">android, mmkv</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/android-textview/" rel="tag">android, textview</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/kotlin/" rel="tag">kotlin</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/kotlin-coroutine/" rel="tag">kotlin, coroutine</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/kotlin-%E5%8D%8F%E7%A8%8B/" rel="tag">kotlin, 协程</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/v8-WebAssembly/" rel="tag">v8, WebAssembly</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/Android-ROOM/" style="font-size: 10px;">Android, ROOM</a> <a href="/tags/NDK/" style="font-size: 10px;">NDK</a> <a href="/tags/TypeScript/" style="font-size: 10px;">TypeScript</a> <a href="/tags/WebAssembly/" style="font-size: 15px;">WebAssembly</a> <a href="/tags/WebView-JSBridge/" style="font-size: 10px;">WebView, JSBridge</a> <a href="/tags/android/" style="font-size: 15px;">android</a> <a href="/tags/android-jetpack-compose/" style="font-size: 10px;">android, jetpack compose</a> <a href="/tags/android-mmkv/" style="font-size: 20px;">android, mmkv</a> <a href="/tags/android-textview/" style="font-size: 10px;">android, textview</a> <a href="/tags/kotlin/" style="font-size: 10px;">kotlin</a> <a href="/tags/kotlin-coroutine/" style="font-size: 10px;">kotlin, coroutine</a> <a href="/tags/kotlin-%E5%8D%8F%E7%A8%8B/" style="font-size: 10px;">kotlin, 协程</a> <a href="/tags/v8-WebAssembly/" style="font-size: 10px;">v8, WebAssembly</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/09/">September 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/08/">August 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/07/">July 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/05/">May 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/03/">March 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/02/">February 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/01/">January 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/12/">December 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/11/">November 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/09/">September 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/07/">July 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/06/">June 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/05/">May 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/03/">March 2019</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2020/09/13/FFMpeg-Android%E5%BC%80%E5%8F%91-%E7%AE%80%E5%8D%95%E9%9F%B3%E8%A7%86%E9%A2%91%E5%90%8C%E6%AD%A5/">FFMpeg-Android开发-简单音视频同步</a>
+          </li>
+        
+          <li>
+            <a href="/2020/09/12/Kotlin%E5%8D%8F%E7%A8%8B%E5%BC%82%E5%B8%B8%E5%A4%84%E7%90%86/">Kotlin协程异常处理</a>
+          </li>
+        
+          <li>
+            <a href="/2020/08/29/FFMpeg-Android%E5%BC%80%E5%8F%91-%E7%AE%80%E5%8D%95%E6%92%AD%E6%94%BE%E9%9F%B3%E9%A2%91/">FFMpeg-Android开发-简单播放音频</a>
+          </li>
+        
+          <li>
+            <a href="/2020/08/23/FFMpeg-Android%E5%BC%80%E5%8F%91-%E7%AE%80%E5%8D%95%E6%92%AD%E6%94%BE%E8%A7%86%E9%A2%91/">FFMpeg-Android开发-简单播放视频</a>
+          </li>
+        
+          <li>
+            <a href="/2020/08/22/FFMpeg-Android%E5%BC%80%E5%8F%91-%E8%A7%A3%E6%9E%90%E8%A7%86%E9%A2%91%E6%A0%BC%E5%BC%8F/">FFMpeg-Android开发-解析视频格式</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2020 Jian Guo<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+  </div>
+</body>
+</html>

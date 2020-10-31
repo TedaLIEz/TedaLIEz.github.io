@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+
+  
+  <title>JSBridge解析 | Aichi_B7A</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="背景利用 webview 的特性，我们设计一个 jsbridge 来实现 js 和 native 的双向通信 native 和 JS 的调用实现手段JavaScript 调用 Native 注入 api这种方式的实现要么通过 webview 的借口，向 js 的 window 对象注入能力，js 调用这些能力时直接执行对应的 native 逻辑要么就是在我们实现浏览器的 jsbinding 时，就">
+<meta property="og:type" content="article">
+<meta property="og:title" content="JSBridge解析">
+<meta property="og:url" content="https://tedaliez.github.io/2019/12/21/JSBridge%E8%A7%A3%E6%9E%90/index.html">
+<meta property="og:site_name" content="Aichi_B7A">
+<meta property="og:description" content="背景利用 webview 的特性，我们设计一个 jsbridge 来实现 js 和 native 的双向通信 native 和 JS 的调用实现手段JavaScript 调用 Native 注入 api这种方式的实现要么通过 webview 的借口，向 js 的 window 对象注入能力，js 调用这些能力时直接执行对应的 native 逻辑要么就是在我们实现浏览器的 jsbinding 时，就">
+<meta property="og:locale">
+<meta property="article:published_time" content="2019-12-21T12:10:53.000Z">
+<meta property="article:modified_time" content="2019-12-21T12:11:13.983Z">
+<meta property="article:author" content="Jian Guo">
+<meta property="article:tag" content="WebView, JSBridge">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="/atom.xml" title="Aichi_B7A" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+<meta name="generator" content="Hexo 5.2.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Aichi_B7A</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="https://tedaliez.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-JSBridge解析" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2019/12/21/JSBridge%E8%A7%A3%E6%9E%90/" class="article-date">
+  <time datetime="2019-12-21T12:10:53.000Z" itemprop="datePublished">2019-12-21</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      JSBridge解析
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>利用 webview 的特性，我们设计一个 jsbridge 来实现 js 和 native 的<strong>双向通信</strong></p>
+<h3 id="native-和-JS-的调用实现手段"><a href="#native-和-JS-的调用实现手段" class="headerlink" title="native 和 JS 的调用实现手段"></a>native 和 JS 的调用实现手段</h3><h4 id="JavaScript-调用-Native"><a href="#JavaScript-调用-Native" class="headerlink" title="JavaScript 调用 Native"></a>JavaScript 调用 Native</h4><ol>
+<li><p>注入 api<br>这种方式的实现要么通过 webview 的借口，向 js 的 window 对象注入能力，js 调用这些能力时直接执行对应的 native 逻辑<br>要么就是在我们实现浏览器的 jsbinding 时，就预埋一些基础能力(类似系统级别的函数接口)</p>
+</li>
+<li><p>拦截 URL SCHEME</p>
+<p>这种实现方式主要依赖 native 的拦截能力，让 js 向一个 native 约定的 scheme 发送请求(例如使用 iframe.src)<br>这种实现的缺陷一是会有 url 长度的隐患，另外创建请求会有耗时</p>
+</li>
+</ol>
+<h4 id="Native-调用-JS"><a href="#Native-调用-JS" class="headerlink" title="Native 调用 JS"></a>Native 调用 JS</h4><pre><code>相对简单，使用webview的evaluateJS类似的接口就可以调用
+</code></pre><h3 id="JSBridge-实现方式"><a href="#JSBridge-实现方式" class="headerlink" title="JSBridge 实现方式"></a>JSBridge 实现方式</h3><p>本质上讲，JSBridge 可以当作是一种 RPC，其核心实现就是句柄解析调用，JSBridge 的句柄往往就是一个 BridgeName，同时携带约定数据格式的序列化数据</p>
+<p>JS 调用 native 的 RPC 实现是比较简单的，大致可以表达为:</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">window</span>.JSBridge = &#123;</span><br><span class="line">  <span class="comment">// 调用 Native</span></span><br><span class="line">  invoke: <span class="function"><span class="keyword">function</span>(<span class="params">bridgeName, data</span>) </span>&#123;</span><br><span class="line">    <span class="comment">// 判断环境，获取不同的 nativeBridge</span></span><br><span class="line">    nativeBridge.postMessage(&#123;</span><br><span class="line">      bridgeName: bridgeName,</span><br><span class="line">      data: data || &#123;&#125;</span><br><span class="line">    &#125;);</span><br><span class="line">  &#125;,</span><br><span class="line">  receiveMessage: <span class="function"><span class="keyword">function</span>(<span class="params">msg</span>) </span>&#123;</span><br><span class="line">    <span class="keyword">var</span> bridgeName = msg.bridgeName,</span><br><span class="line">      data = msg.data || &#123;&#125;;</span><br><span class="line">    <span class="comment">// 具体逻辑</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>这里有个问题，目前的调用但是单向的，如何在一次调用实现双向通信呢？这里实际上可以类比 JSONP 机制进行处理</p>
+<pre><code>JSONP请求发送时，url参数里有callback参数，其值是当前唯一，且被当前window记录，随后服务器返回的记录中，也会用这个参数值为句柄，调用相应的回调函数
+</code></pre><p>因此我们可以参考这个设计，在我们的 jsbridge 设计一个 id 的生成器，和一个 id 保持一对一映射关系的 map，每次 js 调用 native 时，将这个 id 一并带给 native，native 不做理解，透传这个 id 回到 js 端，js 可以利用这个 id 在 map 中寻找到对应的 callback，调用对应的回调。用代码描述如下:</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line">(<span class="function"><span class="keyword">function</span> (<span class="params"></span>) </span>&#123;</span><br><span class="line">    <span class="keyword">var</span> id = <span class="number">0</span>,</span><br><span class="line">        callbacks = &#123;&#125;;</span><br><span class="line"></span><br><span class="line">    <span class="built_in">window</span>.JSBridge = &#123;</span><br><span class="line">        <span class="comment">// 调用 Native</span></span><br><span class="line">        invoke: <span class="function"><span class="keyword">function</span>(<span class="params">bridgeName, callback, data</span>) </span>&#123;</span><br><span class="line">            <span class="comment">// 判断环境，获取不同的 nativeBridge</span></span><br><span class="line">            <span class="keyword">var</span> thisId = id ++; <span class="comment">// 获取唯一 id</span></span><br><span class="line">            callbacks[thisId] = callback; <span class="comment">// 存储 Callback</span></span><br><span class="line">            nativeBridge.postMessage(&#123;</span><br><span class="line">                bridgeName: bridgeName,</span><br><span class="line">                data: data || &#123;&#125;,</span><br><span class="line">                callbackId: thisId <span class="comment">// 传到 Native 端</span></span><br><span class="line">            &#125;);</span><br><span class="line">        &#125;,</span><br><span class="line">        receiveMessage: <span class="function"><span class="keyword">function</span>(<span class="params">msg</span>) </span>&#123;</span><br><span class="line">            <span class="keyword">var</span> bridgeName = msg.bridgeName,</span><br><span class="line">                data = msg.data || &#123;&#125;,</span><br><span class="line">                callbackId = msg.callbackId; <span class="comment">// Native 将 callbackId 原封不动传回</span></span><br><span class="line">            <span class="comment">// 具体逻辑</span></span><br><span class="line">            <span class="comment">// bridgeName 和 callbackId 不会同时存在</span></span><br><span class="line">            <span class="keyword">if</span> (callbackId) &#123;</span><br><span class="line">                <span class="keyword">if</span> (callbacks[callbackId]) &#123; <span class="comment">// 找到相应句柄</span></span><br><span class="line">                    callbacks[callbackId](msg.data); <span class="comment">// 执行调用</span></span><br><span class="line">                &#125;</span><br><span class="line">            &#125; elseif (bridgeName) &#123;</span><br><span class="line"></span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;;</span><br><span class="line">&#125;)();</span><br></pre></td></tr></table></figure>
+<h2 id="P-S-jsbridge-如何解决加载顺序问题？"><a href="#P-S-jsbridge-如何解决加载顺序问题？" class="headerlink" title="P.S jsbridge 如何解决加载顺序问题？"></a>P.S jsbridge 如何解决加载顺序问题？</h2><p>根据我们之前的分析，jsbridge 的建立应该在业务的 js 执行前调用，那么这里就会有一个强逻辑的假设，我们有没有办法解除这种依赖关系呢？<br>jsbridge 的解决方案是业务的 js 将自己将要调用的 bridge 调用通过闭包的形式传到 window 的一个固定对象中，然后我们在加载 jsbridge 时，从这个约定的固定对象中将所有的调用闭包取出，然后依次调用即可</p>
+<p>因为这层逻辑的存在，即使你的 jsbridge 因为网页的 CSP 策略导致加载 bridge 的请求被屏蔽，但由于屏蔽的请求仍旧会触发终端 native 的拦截器代码，你仍旧可以加载 jsbridge，同时利用闭包特性，将请求依次调用回来</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://tedaliez.github.io/2019/12/21/JSBridge%E8%A7%A3%E6%9E%90/" data-id="ckgx4rr7f000gi8x7sonj4f92" class="article-share-link">Share</a>
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/WebView-JSBridge/" rel="tag">WebView, JSBridge</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2020/01/05/Kotlin%E5%8D%8F%E7%A8%8B%E6%B5%85%E6%9E%90/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          Kotlin协程浅析
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2019/12/07/Kotlin%E5%8D%8F%E7%A8%8B%E5%AE%9E%E6%88%98/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">Kotlin协程实战</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/Android-ROOM/" rel="tag">Android, ROOM</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/NDK/" rel="tag">NDK</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/TypeScript/" rel="tag">TypeScript</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/WebAssembly/" rel="tag">WebAssembly</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/WebView-JSBridge/" rel="tag">WebView, JSBridge</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/android/" rel="tag">android</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/android-jetpack-compose/" rel="tag">android, jetpack compose</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/android-mmkv/" rel="tag">android, mmkv</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/android-textview/" rel="tag">android, textview</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/kotlin/" rel="tag">kotlin</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/kotlin-coroutine/" rel="tag">kotlin, coroutine</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/kotlin-%E5%8D%8F%E7%A8%8B/" rel="tag">kotlin, 协程</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/v8-WebAssembly/" rel="tag">v8, WebAssembly</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/Android-ROOM/" style="font-size: 10px;">Android, ROOM</a> <a href="/tags/NDK/" style="font-size: 10px;">NDK</a> <a href="/tags/TypeScript/" style="font-size: 10px;">TypeScript</a> <a href="/tags/WebAssembly/" style="font-size: 15px;">WebAssembly</a> <a href="/tags/WebView-JSBridge/" style="font-size: 10px;">WebView, JSBridge</a> <a href="/tags/android/" style="font-size: 15px;">android</a> <a href="/tags/android-jetpack-compose/" style="font-size: 10px;">android, jetpack compose</a> <a href="/tags/android-mmkv/" style="font-size: 20px;">android, mmkv</a> <a href="/tags/android-textview/" style="font-size: 10px;">android, textview</a> <a href="/tags/kotlin/" style="font-size: 10px;">kotlin</a> <a href="/tags/kotlin-coroutine/" style="font-size: 10px;">kotlin, coroutine</a> <a href="/tags/kotlin-%E5%8D%8F%E7%A8%8B/" style="font-size: 10px;">kotlin, 协程</a> <a href="/tags/v8-WebAssembly/" style="font-size: 10px;">v8, WebAssembly</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/09/">September 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/08/">August 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/07/">July 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/05/">May 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/03/">March 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/02/">February 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/01/">January 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/12/">December 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/11/">November 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/09/">September 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/07/">July 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/06/">June 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/05/">May 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/03/">March 2019</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2020/09/13/FFMpeg-Android%E5%BC%80%E5%8F%91-%E7%AE%80%E5%8D%95%E9%9F%B3%E8%A7%86%E9%A2%91%E5%90%8C%E6%AD%A5/">FFMpeg-Android开发-简单音视频同步</a>
+          </li>
+        
+          <li>
+            <a href="/2020/09/12/Kotlin%E5%8D%8F%E7%A8%8B%E5%BC%82%E5%B8%B8%E5%A4%84%E7%90%86/">Kotlin协程异常处理</a>
+          </li>
+        
+          <li>
+            <a href="/2020/08/29/FFMpeg-Android%E5%BC%80%E5%8F%91-%E7%AE%80%E5%8D%95%E6%92%AD%E6%94%BE%E9%9F%B3%E9%A2%91/">FFMpeg-Android开发-简单播放音频</a>
+          </li>
+        
+          <li>
+            <a href="/2020/08/23/FFMpeg-Android%E5%BC%80%E5%8F%91-%E7%AE%80%E5%8D%95%E6%92%AD%E6%94%BE%E8%A7%86%E9%A2%91/">FFMpeg-Android开发-简单播放视频</a>
+          </li>
+        
+          <li>
+            <a href="/2020/08/22/FFMpeg-Android%E5%BC%80%E5%8F%91-%E8%A7%A3%E6%9E%90%E8%A7%86%E9%A2%91%E6%A0%BC%E5%BC%8F/">FFMpeg-Android开发-解析视频格式</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2020 Jian Guo<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+  </div>
+</body>
+</html>

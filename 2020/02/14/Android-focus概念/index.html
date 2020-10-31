@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+
+  
+  <title>Android focus概念 | Aichi_B7A</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="Android focus 相关概念focus焦点实际上是窗口系统中一个重要概念，如果一个窗体获得了焦点，其含义是该窗体获得了可交互的机会。在 android 中也是如此，例如一个 EditText，只有当其获得了焦点时，我们才能通过键盘对其做输入操作 focusable &amp;&amp; focusableInTouchMode这两个属性是比较容易造成理解混淆。 首先我们看下focusabl">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Android focus概念">
+<meta property="og:url" content="https://tedaliez.github.io/2020/02/14/Android-focus%E6%A6%82%E5%BF%B5/index.html">
+<meta property="og:site_name" content="Aichi_B7A">
+<meta property="og:description" content="Android focus 相关概念focus焦点实际上是窗口系统中一个重要概念，如果一个窗体获得了焦点，其含义是该窗体获得了可交互的机会。在 android 中也是如此，例如一个 EditText，只有当其获得了焦点时，我们才能通过键盘对其做输入操作 focusable &amp;&amp; focusableInTouchMode这两个属性是比较容易造成理解混淆。 首先我们看下focusabl">
+<meta property="og:locale">
+<meta property="article:published_time" content="2020-02-14T09:52:43.000Z">
+<meta property="article:modified_time" content="2020-02-14T09:52:57.146Z">
+<meta property="article:author" content="Jian Guo">
+<meta property="article:tag" content="android">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="/atom.xml" title="Aichi_B7A" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+<meta name="generator" content="Hexo 5.2.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Aichi_B7A</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="https://tedaliez.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-Android-focus概念" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2020/02/14/Android-focus%E6%A6%82%E5%BF%B5/" class="article-date">
+  <time datetime="2020-02-14T09:52:43.000Z" itemprop="datePublished">2020-02-14</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      Android focus概念
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h1 id="Android-focus-相关概念"><a href="#Android-focus-相关概念" class="headerlink" title="Android focus 相关概念"></a>Android focus 相关概念</h1><h2 id="focus"><a href="#focus" class="headerlink" title="focus"></a>focus</h2><p>焦点实际上是窗口系统中一个重要概念，如果一个窗体获得了焦点，其含义是该窗体获得了可交互的机会。在 android 中也是如此，例如一个 EditText，只有当其获得了焦点时，我们才能通过键盘对其做输入操作</p>
+<h2 id="focusable-amp-amp-focusableInTouchMode"><a href="#focusable-amp-amp-focusableInTouchMode" class="headerlink" title="focusable &amp;&amp; focusableInTouchMode"></a>focusable &amp;&amp; focusableInTouchMode</h2><p>这两个属性是比较容易造成理解混淆。</p>
+<p>首先我们看下<code>focusableInTouchMode</code>的官方定义</p>
+<pre><code>Boolean that controls whether a view can take focus while in touch mode. If this is true for a view, that view can gain focus when clicked on, and can keep focus if another view is clicked on that doesn&apos;t have this attribute set to true.
+</code></pre><p>翻译一下，如果设置为 true，那么当其被触摸点击时，就有能力获得焦点；并且其他为 false 的 View 的点击都不能夺取这个焦点。</p>
+<p>举例来说，如果有一个 EditText 其<code>focusableInTouchMode</code>为 true, 那么我们在屏幕上对其点击就会拉起虚拟键盘。</p>
+<p>另外，有些业务场景是点击 EditText 后不拉起键盘，而是弹起 Dialog 来输入的场景。那么这个时候最简单的方案就是设置<code>focusableInTouchMode</code>为 false，然后给这个 EditText 的点击事件实现你的弹窗逻辑</p>
+<p>但这里就有个冲突，如果<code>focusableInTouchMode</code>为 true，那么此时我对 Widget 的点击到底算是点击(click)事件还是算作 focus 事件呢？答案是算作 focus 事件，所以有时候你会遇到给 Button 设置<code>focusableInTouchMode</code>为 true 后，每次第一次点击都不触发 onClick 的问题， 因为其 focus 的逻辑会优先 click 逻辑触发</p>
+<p>事实上，任何窗体系统的交互其实是要分为两步走的:</p>
+<ol>
+<li>找到特定的 Widget，让其获得焦点</li>
+<li>开始交互(输入, 点击等)</li>
+</ol>
+<p>因此获取焦点的逻辑应该都是优先触发的</p>
+<p>这里有个疑问是为什么额外需要一个 touchMode，我的理解是跟 android 机器面临的历史问题，历史上 android 机器曾经是有软硬件两种操作方式的。有些古老手机上会保留类似滚球的操作设备来在不同窗体上 focus。另外，类似智能电视这样的设备上也会有硬件(遥控器), 触摸屏两种交互的方式.</p>
+<p>而 focusable 则是表示一个 Widget 是否能被 focus，如果这个属性设置成 false，那么这个 Widget 是不能获得焦点的，用户也无法与这个 Widget 进行交互(例如输入)</p>
+<p>同时根据文档描述</p>
+<pre><code>Setting this to false will also ensure that this view is not focusable in touch mode.
+</code></pre><p>这个属性为 false 时，会将<code>focusableInTouchMode</code>也变成 false</p>
+<p>在代码中，我们发现<code>View#setFocusable</code>有一个 int 作为参数，除去两个常见的<code>FOCUSABLE</code>和<code>NOT_FOCUSABLE</code>对应 xml 中的 true 和 false 外，我们看到其还有一个选项, <code>FOCUSABLE_AUTO</code>. 根据注释，这个是 Widget 的默认 focusable 值，android 系统会自动决定 Widget 的焦点</p>
+<h2 id="descendantFocusability-属性"><a href="#descendantFocusability-属性" class="headerlink" title="descendantFocusability 属性"></a>descendantFocusability 属性</h2><p>这个属性常常用在 ViewGroup，用来定义这个 ViewGroup 和其子 View 之间获取焦点时的关系</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">+------------------------------------------------------------------------------------------+</span><br><span class="line">|      Constant            Value            Description                                    |</span><br><span class="line">+------------------------------------------------------------------------------------------+</span><br><span class="line">| afterDescendants           1          The ViewGroup will get focus only if               |</span><br><span class="line">|                                       none of its descendants want it.                   |</span><br><span class="line">+------------------------------------------------------------------------------------------+</span><br><span class="line">| beforeDescendants          0          The ViewGroup will get focus before                |</span><br><span class="line">|                                       any of its descendants.                            |</span><br><span class="line">+------------------------------------------------------------------------------------------+</span><br><span class="line">| blocksDescendants          2          The ViewGroup will block its descendants from      |</span><br><span class="line">|                                       receiving focus.                                   |</span><br><span class="line">+------------------------------------------------------------------------------------------+</span><br></pre></td></tr></table></figure>
+<p>也就是说，根据不同的定义，ViewGroup 有能力在子 View 之前，之后，或者阻止子 View 获取焦点</p>
+<p>那么这个属性的使用场景是什么呢? 例如你要在一个 ListView 里面与 item 的某个元素做交互, 那么你是希望子 View 先于 ListView 交互的(这样才能避免 ListView 的焦点逻辑优先触发), 此时设置 afterDescendants 就是有用的</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onItemSelected</span><span class="params">(AdapterView&lt;?&gt; parent, View view,</span></span></span><br><span class="line"><span class="function"><span class="params">        <span class="keyword">int</span> position, <span class="keyword">long</span> id)</span> </span>&#123;</span><br><span class="line">    ListView listView = getListView();</span><br><span class="line">    Log.d(TAG, <span class="string">"onItemSelected gave us "</span> + view.toString());</span><br><span class="line">    Button b = (Button) view.findViewById(R.id.button);</span><br><span class="line">    EditText et = (EditText) view.findViewById(R.id.editor);</span><br><span class="line">    <span class="keyword">if</span> (b != <span class="keyword">null</span> || et != <span class="keyword">null</span>) &#123;</span><br><span class="line">        <span class="comment">// Use afterDescendants to keep ListView from getting focus</span></span><br><span class="line">        listView.setDescendantFocusability(ViewGroup.FOCUS_AFTER_DESCENDANTS);</span><br><span class="line">        <span class="keyword">if</span>(et!=<span class="keyword">null</span>) et.requestFocus();</span><br><span class="line">        <span class="keyword">else</span> <span class="keyword">if</span>(b!=<span class="keyword">null</span>) b.requestFocus();</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (!listView.isFocused()) &#123;</span><br><span class="line">            <span class="comment">// Use beforeDescendants so that previous selections don't re-take focus</span></span><br><span class="line">            listView.setDescendantFocusability(ViewGroup.FOCUS_BEFORE_DESCENDANTS);</span><br><span class="line">            listView.requestFocus();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://tedaliez.github.io/2020/02/14/Android-focus%E6%A6%82%E5%BF%B5/" data-id="ckgx4rr6s0002i8x77l1ck3gp" class="article-share-link">Share</a>
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/android/" rel="tag">android</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2020/03/28/ROOM%E6%95%B0%E6%8D%AE%E5%BA%93%E5%88%86%E6%9E%90/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          ROOM数据库分析
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2020/01/12/Android-TextView%E7%BB%98%E5%88%B6%E6%8A%80%E5%B7%A7/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">Android TextView绘制技巧</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/Android-ROOM/" rel="tag">Android, ROOM</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/NDK/" rel="tag">NDK</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/TypeScript/" rel="tag">TypeScript</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/WebAssembly/" rel="tag">WebAssembly</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/WebView-JSBridge/" rel="tag">WebView, JSBridge</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/android/" rel="tag">android</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/android-jetpack-compose/" rel="tag">android, jetpack compose</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/android-mmkv/" rel="tag">android, mmkv</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/android-textview/" rel="tag">android, textview</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/kotlin/" rel="tag">kotlin</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/kotlin-coroutine/" rel="tag">kotlin, coroutine</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/kotlin-%E5%8D%8F%E7%A8%8B/" rel="tag">kotlin, 协程</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/v8-WebAssembly/" rel="tag">v8, WebAssembly</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/Android-ROOM/" style="font-size: 10px;">Android, ROOM</a> <a href="/tags/NDK/" style="font-size: 10px;">NDK</a> <a href="/tags/TypeScript/" style="font-size: 10px;">TypeScript</a> <a href="/tags/WebAssembly/" style="font-size: 15px;">WebAssembly</a> <a href="/tags/WebView-JSBridge/" style="font-size: 10px;">WebView, JSBridge</a> <a href="/tags/android/" style="font-size: 15px;">android</a> <a href="/tags/android-jetpack-compose/" style="font-size: 10px;">android, jetpack compose</a> <a href="/tags/android-mmkv/" style="font-size: 20px;">android, mmkv</a> <a href="/tags/android-textview/" style="font-size: 10px;">android, textview</a> <a href="/tags/kotlin/" style="font-size: 10px;">kotlin</a> <a href="/tags/kotlin-coroutine/" style="font-size: 10px;">kotlin, coroutine</a> <a href="/tags/kotlin-%E5%8D%8F%E7%A8%8B/" style="font-size: 10px;">kotlin, 协程</a> <a href="/tags/v8-WebAssembly/" style="font-size: 10px;">v8, WebAssembly</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/09/">September 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/08/">August 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/07/">July 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/05/">May 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/03/">March 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/02/">February 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/01/">January 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/12/">December 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/11/">November 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/09/">September 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/07/">July 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/06/">June 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/05/">May 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/03/">March 2019</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2020/09/13/FFMpeg-Android%E5%BC%80%E5%8F%91-%E7%AE%80%E5%8D%95%E9%9F%B3%E8%A7%86%E9%A2%91%E5%90%8C%E6%AD%A5/">FFMpeg-Android开发-简单音视频同步</a>
+          </li>
+        
+          <li>
+            <a href="/2020/09/12/Kotlin%E5%8D%8F%E7%A8%8B%E5%BC%82%E5%B8%B8%E5%A4%84%E7%90%86/">Kotlin协程异常处理</a>
+          </li>
+        
+          <li>
+            <a href="/2020/08/29/FFMpeg-Android%E5%BC%80%E5%8F%91-%E7%AE%80%E5%8D%95%E6%92%AD%E6%94%BE%E9%9F%B3%E9%A2%91/">FFMpeg-Android开发-简单播放音频</a>
+          </li>
+        
+          <li>
+            <a href="/2020/08/23/FFMpeg-Android%E5%BC%80%E5%8F%91-%E7%AE%80%E5%8D%95%E6%92%AD%E6%94%BE%E8%A7%86%E9%A2%91/">FFMpeg-Android开发-简单播放视频</a>
+          </li>
+        
+          <li>
+            <a href="/2020/08/22/FFMpeg-Android%E5%BC%80%E5%8F%91-%E8%A7%A3%E6%9E%90%E8%A7%86%E9%A2%91%E6%A0%BC%E5%BC%8F/">FFMpeg-Android开发-解析视频格式</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2020 Jian Guo<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+  </div>
+</body>
+</html>

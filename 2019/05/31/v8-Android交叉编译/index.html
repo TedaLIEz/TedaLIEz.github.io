@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+
+  
+  <title>v8 Android交叉编译 | Aichi_B7A</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="编译准备 编译 Android端交叉编译 开始编译 Android 项目配置  编译准备整个编译考虑到网络问题，强烈建议使用VPS的方式在服务器上进行编译。 编译第一个难关就是代码的获取，由于v8整个工具链比较长，这里建议直接用Proxifier设置代理后下载. Proxifier的配置这里不赘述. 整个过程都需要代理 安装好Git和depot_tools后 12345678mkdir ~&#x2F;v8">
+<meta property="og:type" content="article">
+<meta property="og:title" content="v8 Android交叉编译">
+<meta property="og:url" content="https://tedaliez.github.io/2019/05/31/v8-Android%E4%BA%A4%E5%8F%89%E7%BC%96%E8%AF%91/index.html">
+<meta property="og:site_name" content="Aichi_B7A">
+<meta property="og:description" content="编译准备 编译 Android端交叉编译 开始编译 Android 项目配置  编译准备整个编译考虑到网络问题，强烈建议使用VPS的方式在服务器上进行编译。 编译第一个难关就是代码的获取，由于v8整个工具链比较长，这里建议直接用Proxifier设置代理后下载. Proxifier的配置这里不赘述. 整个过程都需要代理 安装好Git和depot_tools后 12345678mkdir ~&#x2F;v8">
+<meta property="og:locale">
+<meta property="article:published_time" content="2019-05-31T14:16:46.000Z">
+<meta property="article:modified_time" content="2019-05-31T15:03:35.741Z">
+<meta property="article:author" content="Jian Guo">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="/atom.xml" title="Aichi_B7A" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+<meta name="generator" content="Hexo 5.2.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Aichi_B7A</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="https://tedaliez.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-v8-Android交叉编译" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2019/05/31/v8-Android%E4%BA%A4%E5%8F%89%E7%BC%96%E8%AF%91/" class="article-date">
+  <time datetime="2019-05-31T14:16:46.000Z" itemprop="datePublished">2019-05-31</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      v8 Android交叉编译
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <ul>
+<li><a href="#%E7%BC%96%E8%AF%91%E5%87%86%E5%A4%87">编译准备</a></li>
+<li><a href="#%E7%BC%96%E8%AF%91">编译</a></li>
+<li><a href="#android%E7%AB%AF%E4%BA%A4%E5%8F%89%E7%BC%96%E8%AF%91">Android端交叉编译</a></li>
+<li><a href="#%E5%BC%80%E5%A7%8B%E7%BC%96%E8%AF%91">开始编译</a></li>
+<li><a href="#android-%E9%A1%B9%E7%9B%AE%E9%85%8D%E7%BD%AE">Android 项目配置</a></li>
+</ul>
+<h2 id="编译准备"><a href="#编译准备" class="headerlink" title="编译准备"></a>编译准备</h2><p>整个编译考虑到网络问题，强烈建议使用VPS的方式在服务器上进行编译。</p>
+<h2 id="编译"><a href="#编译" class="headerlink" title="编译"></a>编译</h2><p>第一个难关就是代码的获取，由于v8整个工具链比较长，这里建议直接用Proxifier设置代理后下载. Proxifier的配置这里不赘述. 整个过程都需要代理</p>
+<p>安装好Git和depot_tools后</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">mkdir ~/v8</span><br><span class="line"><span class="built_in">cd</span> ~/v8</span><br><span class="line">fetch v8</span><br><span class="line"><span class="built_in">cd</span> v8</span><br><span class="line"></span><br><span class="line"><span class="built_in">alias</span> gm=/path/to/v8/tools/dev/gm.py</span><br><span class="line"></span><br><span class="line">gm x64.release</span><br></pre></td></tr></table></figure>
+<p>参考 <a href="https://v8.dev/docs/build-gn" target="_blank" rel="noopener">https://v8.dev/docs/build-gn</a> 来做一些编译定制化</p>
+<h2 id="Android端交叉编译"><a href="#Android端交叉编译" class="headerlink" title="Android端交叉编译"></a>Android端交叉编译</h2><p>遵循上述步骤后, 来到<code>~/v8</code>你会看到一个.glient文件, 修改文件为</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"> <span class="string">solutions</span> <span class="string">=</span> <span class="string">[</span></span><br><span class="line">    <span class="string">&#123;</span></span><br><span class="line"><span class="attr">        "url":</span> <span class="string">"https://chromium.googlesource.com/v8/v8.git"</span><span class="string">,</span></span><br><span class="line"><span class="attr">        "managed":</span> <span class="literal">False</span><span class="string">,</span></span><br><span class="line"><span class="attr">        "name":</span> <span class="string">"v8"</span><span class="string">,</span></span><br><span class="line"><span class="attr">        "deps_file":</span> <span class="string">"DEPS"</span><span class="string">,</span></span><br><span class="line"><span class="attr">        "custom_deps":</span> <span class="string">&#123;&#125;,</span></span><br><span class="line">    <span class="string">&#125;,</span></span><br><span class="line"><span class="string">];</span></span><br><span class="line"><span class="string">target_os</span> <span class="string">=</span> <span class="string">["android",</span> <span class="string">"unix"</span><span class="string">];</span></span><br></pre></td></tr></table></figure>
+<p>之后<code>gclient sync</code>来获取Android交叉编译需要的工具</p>
+<h2 id="开始编译"><a href="#开始编译" class="headerlink" title="开始编译"></a>开始编译</h2><p>这里我们使用gn工具进行编译，下面贴以下我的gn编译的配置</p>
+<p>tools/dev/v8gen.py gen -m client.v8.ports -b “V8 Android Arm - builder” android.arm.release</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">android_unstripped_runtime_outputs = true</span><br><span class="line">v8_use_external_startup_data = false</span><br><span class="line">is_debug = false</span><br><span class="line">symbol_level = 1</span><br><span class="line">target_cpu = &quot;arm&quot;</span><br><span class="line">target_os = &quot;android&quot;</span><br><span class="line">use_goma = false</span><br><span class="line">v8_enable_i18n_support = false</span><br><span class="line">v8_static_library = true</span><br><span class="line">is_component_build = false</span><br><span class="line">v8_monolithic = true</span><br><span class="line">v8_android_log_stdout = true</span><br></pre></td></tr></table></figure>
+<p>其中v8_monolithic表示将静态库编译为一个文件，而非几个单独文件</p>
+<p>之后ninja -C android.arm.release</p>
+<p>编译成功后，在android.arm.release/obj找到libv8_monolith.a</p>
+<h2 id="Android-项目配置"><a href="#Android-项目配置" class="headerlink" title="Android 项目配置"></a>Android 项目配置</h2><p>我们需要把v8的头文件include进来，同时配置CMakeLists.txt</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">add_library(v8 STATIC IMPORTED)</span><br><span class="line">set_target_properties( v8 PROPERTIES IMPORTED_LOCATION $&#123;CMAKE_SOURCE_DIR&#125;/libs/$&#123;ANDROID_ABI&#125;/libv8_monolith.a)</span><br><span class="line"></span><br><span class="line">add_library( # Sets the name of the library.</span><br><span class="line">        native-lib</span><br><span class="line"></span><br><span class="line">        # Sets the library as a shared library.</span><br><span class="line">        SHARED</span><br><span class="line"></span><br><span class="line">        # Provides a relative path to your source file(s).</span><br><span class="line">        $&#123;CMAKE_SOURCE_DIR&#125;/src/main/cpp/native-lib.cpp)</span><br><span class="line"></span><br><span class="line">target_include_directories( native-lib PRIVATE $&#123;CMAKE_SOURCE_DIR&#125;/libs/include)</span><br></pre></td></tr></table></figure>
+<p>branch_head/7.2分支上测试成功</p>
+<p>具体的代码可以参考<a href="https://github.com/TedaLIEz/V8AndroidEmbedding" target="_blank" rel="noopener">https://github.com/TedaLIEz/V8AndroidEmbedding</a></p>
+<p>P.S</p>
+<p>将7.4之后的v8编译，就会遇到一个错误</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">../../buildtools/third_party/libc++/trunk/include/string:2724: error: undefined reference to &apos;std::__1::basic_string&lt;char, std::__1::char_traits&lt;char&gt;, std::__1::allocator&lt;char&gt; &gt;::insert(unsigned int, char const*, unsigned int)&apos;</span><br><span class="line">/Users/JianGuo/AndroidProject/V8DemoApplication/app/src/main/cpp/native-lib.cpp:25: error: undefined reference to &apos;v8::platform::NewDefaultPlatform(int, v8::platform::IdleTaskSupport, v8::platform::InProcessStackDumping, std::__ndk1::unique_ptr&lt;v8::TracingController, std::__ndk1::default_delete&lt;v8::TracingController&gt; &gt;)&apos;</span><br><span class="line">clang++: error: linker command failed with exit code 1 (use -v to see invocation)</span><br><span class="line">ninja: build stopped: subcommand failed.</span><br></pre></td></tr></table></figure>
+<p>看日志，我们似乎编译出了一个错误的命名空间。那么我们来检查一下我们的静态库的命名空间</p>
+<p><code>objdump -D app/libs/armeabi-v7a/libv8_monolith.a | grep NewDefault</code></p>
+<p>得到:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">Disassembly of section .text._ZN2v88platform18NewDefaultPlatformEiNS0_15IdleTaskSupportENS0_21InProcessStackDumpingENSt3__110unique_ptrINS_17TracingControllerENS3_14default_deleteIS5_EEEE:</span><br><span class="line">_ZN2v88platform18NewDefaultPlatformEiNS0_15IdleTaskSupportENS0_21InProcessStackDumpingENSt3__110unique_ptrINS_17TracingControllerENS3_14default_deleteIS5_EEEE:</span><br><span class="line">       4:       81 b0 01 2b     blhs    #442884 &lt;_ZN2v88platform18NewDefaultPlatformEiNS0_15IdleTaskSupportENS0_21InProcessStackDumpingENSt3__110unique_ptrINS_17TracingControllerENS3_14default_deleteIS5_EEEE+0x6C210&gt;</span><br><span class="line">Disassembly of section .rel.text._ZN2v88platform18NewDefaultPlatformEiNS0_15IdleTaskSupportENS0_21InProcessStackDumpingENSt3__110unique_ptrINS_17TracingControllerENS3_14default_deleteIS5_EEEE:</span><br><span class="line">.rel.text._ZN2v88platform18NewDefaultPlatformEiNS0_15IdleTaskSupportENS0_21InProcessStackDumpingENSt3__110unique_ptrINS_17TracingControllerENS3_14default_deleteIS5_EEEE:</span><br><span class="line">Disassembly of section .ARM.exidx.text._ZN2v88platform18NewDefaultPlatformEiNS0_15IdleTaskSupportENS0_21InProcessStackDumpingENSt3__110unique_ptrINS_17TracingControllerENS3_14default_deleteIS5_EEEE:</span><br><span class="line">.ARM.exidx.text._ZN2v88platform18NewDefaultPlatformEiNS0_15IdleTaskSupportENS0_21InProcessStackDumpingENSt3__110unique_ptrINS_17TracingControllerENS3_14default_deleteIS5_EEEE:</span><br><span class="line">Disassembly of section .rel.ARM.exidx.text._ZN2v88platform18NewDefaultPlatformEiNS0_15IdleTaskSupportENS0_21InProcessStackDumpingENSt3__110unique_ptrINS_17TracingControllerENS3_14default_deleteIS5_EEEE:</span><br><span class="line">.rel.ARM.exidx.text._ZN2v88platform18NewDefaultPlatformEiNS0_15IdleTaskSupportENS0_21InProcessStackDumpingENSt3__110unique_ptrINS_17TracingControllerENS3_14default_deleteIS5_EEEE:</span><br><span class="line">Disassembly of section .text._ZN2v811ArrayBuffer9Allocator19NewDefaultAllocatorEv:</span><br><span class="line">_ZN2v811ArrayBuffer9Allocator19NewDefaultAllocatorEv:</span><br><span class="line">Disassembly of section .rel.text._ZN2v811ArrayBuffer9Allocator19NewDefaultAllocatorEv:</span><br><span class="line">.rel.text._ZN2v811ArrayBuffer9Allocator19NewDefaultAllocatorEv:</span><br><span class="line">Disassembly of section .ARM.exidx.text._ZN2v811ArrayBuffer9Allocator19NewDefaultAllocatorEv:</span><br><span class="line">.ARM.exidx.text._ZN2v811ArrayBuffer9Allocator19NewDefaultAllocatorEv:</span><br><span class="line">Disassembly of section .rel.ARM.exidx.text._ZN2v811ArrayBuffer9Allocator19NewDefaultAllocatorEv:</span><br><span class="line">.rel.ARM.exidx.text._ZN2v811ArrayBuffer9Allocator19NewDefaultAllocatorEv:</span><br></pre></td></tr></table></figure></p>
+<p>其中得到这么一串粉碎命名：</p>
+<p><code>_ZN2v88platform18NewDefaultPlatformEiNS0_15IdleTaskSupportENS0_21InProcessStackDumpingENSt3__110unique_ptrINS_17TracingControllerENS3_14default_deleteIS5_EEEE</code></p>
+<p>通过demangle后得到:</p>
+<p><code>v8::platform::NewDefaultPlatform(int, v8::platform::IdleTaskSupport, v8::platform::InProcessStackDumping, std::__1::unique_ptr&lt;v8::TracingController, std::__1::default_delete&lt;v8::TracingController&gt; &gt;)</code><br>也就是说，我们的静态库编译出了std::<strong>1::unique_ptr，但是ld时却寻找std::</strong>ndk1::unique_ptr。</p>
+<p>继续看日志，发现编译时尝试寻找<code>../../buildtools/third_party/libc++/trunk/include/string:2724</code>, 不妨去v8的源码中看一下。来到buildtools/third_party/libc++/trunk/__config:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">#ifndef _LIBCPP_ABI_NAMESPACE</span><br><span class="line"># define _LIBCPP_ABI_NAMESPACE _LIBCPP_CONCAT(__,_LIBCPP_ABI_VERSION)</span><br><span class="line">#endif</span><br><span class="line">#define _LIBCPP_BEGIN_NAMESPACE_STD namespace std &#123; inline namespace _LIBCPP_ABI_NAMESPACE &#123;</span><br><span class="line">#define _LIBCPP_END_NAMESPACE_STD  &#125; &#125;</span><br><span class="line">#define _VSTD std::_LIBCPP_ABI_NAMESPACE</span><br><span class="line">_LIBCPP_BEGIN_NAMESPACE_STD _LIBCPP_END_NAMESPACE_STD</span><br></pre></td></tr></table></figure></p>
+<p>这里我们展开后其实就会得到:</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">namespace</span> <span class="built_in">std</span> &#123;</span><br><span class="line">    <span class="keyword">inline</span> <span class="keyword">namespace</span> __1 &#123;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>对比以下ndk中的__config:</p>
+<p>thrid_party/android_ndk/cxx-stl/llvm-libc++/include/__config</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">define</span> _LIBCPP_NAMESPACE _LIBCPP_CONCAT(__ndk,_LIBCPP_ABI_VERSION)</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> _LIBCPP_BEGIN_NAMESPACE_STD namespace std &#123;inline namespace _LIBCPP_NAMESPACE &#123;</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> _LIBCPP_END_NAMESPACE_STD  &#125; &#125;</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> _VSTD std::_LIBCPP_NAMESPACE</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">namespace</span> <span class="built_in">std</span> &#123;</span><br><span class="line">  <span class="keyword">inline</span> <span class="keyword">namespace</span> _LIBCPP_NAMESPACE &#123;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里展开后为:</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">namespace</span> <span class="built_in">std</span> &#123;</span><br><span class="line">  <span class="keyword">inline</span> <span class="keyword">namespace</span> __ndk1 &#123;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里显然是不一样的。也就是说ndk的libc++实际上更改了命名空间到__ndk这个前缀上，而v8进行编译时使用的libc++是<br><a href="https://chromium.googlesource.com/chromium/llvm-project/libcxx" target="_blank" rel="noopener">https://chromium.googlesource.com/chromium/llvm-project/libcxx</a><br>二者的命名空间显然是不同的。但为什么我编译使用的是buildtools/third_party/libc++而非thrid_party/android_ndk/cxx-stl/llvm-libc++？这个我还没有答案。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://tedaliez.github.io/2019/05/31/v8-Android%E4%BA%A4%E5%8F%89%E7%BC%96%E8%AF%91/" data-id="ckgx4rr7u0015i8x769hthk4o" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2019/06/06/v8%E6%89%A7%E8%A1%8CWebAssembly%E9%81%87%E5%88%B0%E7%9A%84%E9%97%AE%E9%A2%98%E5%92%8C%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          v8执行WebAssembly遇到的问题和解决方法
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2019/05/25/WebAssembly%E5%88%9D%E6%8E%A2/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">WebAssembly初探</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/Android-ROOM/" rel="tag">Android, ROOM</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/NDK/" rel="tag">NDK</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/TypeScript/" rel="tag">TypeScript</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/WebAssembly/" rel="tag">WebAssembly</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/WebView-JSBridge/" rel="tag">WebView, JSBridge</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/android/" rel="tag">android</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/android-jetpack-compose/" rel="tag">android, jetpack compose</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/android-mmkv/" rel="tag">android, mmkv</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/android-textview/" rel="tag">android, textview</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/kotlin/" rel="tag">kotlin</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/kotlin-coroutine/" rel="tag">kotlin, coroutine</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/kotlin-%E5%8D%8F%E7%A8%8B/" rel="tag">kotlin, 协程</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/v8-WebAssembly/" rel="tag">v8, WebAssembly</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/Android-ROOM/" style="font-size: 10px;">Android, ROOM</a> <a href="/tags/NDK/" style="font-size: 10px;">NDK</a> <a href="/tags/TypeScript/" style="font-size: 10px;">TypeScript</a> <a href="/tags/WebAssembly/" style="font-size: 15px;">WebAssembly</a> <a href="/tags/WebView-JSBridge/" style="font-size: 10px;">WebView, JSBridge</a> <a href="/tags/android/" style="font-size: 15px;">android</a> <a href="/tags/android-jetpack-compose/" style="font-size: 10px;">android, jetpack compose</a> <a href="/tags/android-mmkv/" style="font-size: 20px;">android, mmkv</a> <a href="/tags/android-textview/" style="font-size: 10px;">android, textview</a> <a href="/tags/kotlin/" style="font-size: 10px;">kotlin</a> <a href="/tags/kotlin-coroutine/" style="font-size: 10px;">kotlin, coroutine</a> <a href="/tags/kotlin-%E5%8D%8F%E7%A8%8B/" style="font-size: 10px;">kotlin, 协程</a> <a href="/tags/v8-WebAssembly/" style="font-size: 10px;">v8, WebAssembly</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/09/">September 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/08/">August 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/07/">July 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/05/">May 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/03/">March 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/02/">February 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/01/">January 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/12/">December 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/11/">November 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/09/">September 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/07/">July 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/06/">June 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/05/">May 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/03/">March 2019</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2020/09/13/FFMpeg-Android%E5%BC%80%E5%8F%91-%E7%AE%80%E5%8D%95%E9%9F%B3%E8%A7%86%E9%A2%91%E5%90%8C%E6%AD%A5/">FFMpeg-Android开发-简单音视频同步</a>
+          </li>
+        
+          <li>
+            <a href="/2020/09/12/Kotlin%E5%8D%8F%E7%A8%8B%E5%BC%82%E5%B8%B8%E5%A4%84%E7%90%86/">Kotlin协程异常处理</a>
+          </li>
+        
+          <li>
+            <a href="/2020/08/29/FFMpeg-Android%E5%BC%80%E5%8F%91-%E7%AE%80%E5%8D%95%E6%92%AD%E6%94%BE%E9%9F%B3%E9%A2%91/">FFMpeg-Android开发-简单播放音频</a>
+          </li>
+        
+          <li>
+            <a href="/2020/08/23/FFMpeg-Android%E5%BC%80%E5%8F%91-%E7%AE%80%E5%8D%95%E6%92%AD%E6%94%BE%E8%A7%86%E9%A2%91/">FFMpeg-Android开发-简单播放视频</a>
+          </li>
+        
+          <li>
+            <a href="/2020/08/22/FFMpeg-Android%E5%BC%80%E5%8F%91-%E8%A7%A3%E6%9E%90%E8%A7%86%E9%A2%91%E6%A0%BC%E5%BC%8F/">FFMpeg-Android开发-解析视频格式</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2020 Jian Guo<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+  </div>
+</body>
+</html>

@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+
+  
+  <title>FFMpeg-Android开发-简单播放视频 | Aichi_B7A</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="本文部分对应的源代码可参考https:&#x2F;&#x2F;github.com&#x2F;TedaLIEz&#x2F;MyFFMpegAndroid&#x2F;tree&#x2F;v1.1 具体实现结合上一篇文章FFMpeg-Android开发-解析视频格式的内容，我们知道视频解码大致分为如下几个步骤  解析 container 根据 container，获得我们关心的媒体数据（例如播放视频，那我们只关心视频媒体） 根据媒体信息获得对应的解码器 将对应">
+<meta property="og:type" content="article">
+<meta property="og:title" content="FFMpeg-Android开发-简单播放视频">
+<meta property="og:url" content="https://tedaliez.github.io/2020/08/23/FFMpeg-Android%E5%BC%80%E5%8F%91-%E7%AE%80%E5%8D%95%E6%92%AD%E6%94%BE%E8%A7%86%E9%A2%91/index.html">
+<meta property="og:site_name" content="Aichi_B7A">
+<meta property="og:description" content="本文部分对应的源代码可参考https:&#x2F;&#x2F;github.com&#x2F;TedaLIEz&#x2F;MyFFMpegAndroid&#x2F;tree&#x2F;v1.1 具体实现结合上一篇文章FFMpeg-Android开发-解析视频格式的内容，我们知道视频解码大致分为如下几个步骤  解析 container 根据 container，获得我们关心的媒体数据（例如播放视频，那我们只关心视频媒体） 根据媒体信息获得对应的解码器 将对应">
+<meta property="og:locale">
+<meta property="article:published_time" content="2020-08-23T02:25:15.000Z">
+<meta property="article:modified_time" content="2020-08-23T02:42:08.566Z">
+<meta property="article:author" content="Jian Guo">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="/atom.xml" title="Aichi_B7A" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+<meta name="generator" content="Hexo 5.2.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Aichi_B7A</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="https://tedaliez.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-FFMpeg-Android开发-简单播放视频" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2020/08/23/FFMpeg-Android%E5%BC%80%E5%8F%91-%E7%AE%80%E5%8D%95%E6%92%AD%E6%94%BE%E8%A7%86%E9%A2%91/" class="article-date">
+  <time datetime="2020-08-23T02:25:15.000Z" itemprop="datePublished">2020-08-23</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      FFMpeg-Android开发-简单播放视频
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>本文部分对应的源代码可参考<a href="https://github.com/TedaLIEz/MyFFMpegAndroid/tree/v1.1" target="_blank" rel="noopener">https://github.com/TedaLIEz/MyFFMpegAndroid/tree/v1.1</a></p>
+<h2 id="具体实现"><a href="#具体实现" class="headerlink" title="具体实现"></a>具体实现</h2><p>结合上一篇文章<code>FFMpeg-Android开发-解析视频格式</code>的内容，我们知道视频解码大致分为如下几个步骤</p>
+<ol>
+<li>解析 container</li>
+<li>根据 container，获得我们关心的媒体数据（例如播放视频，那我们只关心视频媒体）</li>
+<li>根据媒体信息获得对应的解码器</li>
+<li>将对应的数据送给解码器</li>
+<li>解码器解码，输出帧</li>
+<li>将帧渲染到目标区域</li>
+</ol>
+<p>那么这次我们就来尝试将视频解码并渲染到设备屏幕上，首先看我们 1-3 步的代码</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="comment">// Record result</span></span><br><span class="line"><span class="keyword">int</span> result;</span><br><span class="line"><span class="comment">// R1 Java String -&gt; C String</span></span><br><span class="line"><span class="keyword">const</span> <span class="keyword">char</span> *path = env-&gt;GetStringUTFChars(path_, <span class="number">0</span>);</span><br><span class="line"><span class="comment">// Register FFmpeg components</span></span><br><span class="line">av_register_all();</span><br><span class="line"><span class="comment">// R2 initializes the AVFormatContext context</span></span><br><span class="line">AVFormatContext *format_context = avformat_alloc_context();</span><br><span class="line"><span class="comment">// Open Video File</span></span><br><span class="line">result = avformat_open_input(&amp;format_context, path, <span class="literal">NULL</span>, <span class="literal">NULL</span>);</span><br><span class="line"><span class="keyword">if</span> (result &lt; <span class="number">0</span>) &#123;</span><br><span class="line">    LOGE(<span class="string">"Player Error : Can not open video file"</span>);</span><br><span class="line">    <span class="keyword">return</span>;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// Finding Stream Information of Video Files</span></span><br><span class="line">result = avformat_find_stream_info(format_context, <span class="literal">NULL</span>);</span><br><span class="line"><span class="keyword">if</span> (result &lt; <span class="number">0</span>) &#123;</span><br><span class="line">    LOGE(<span class="string">"Player Error : Can not find video file stream info"</span>);</span><br><span class="line">    <span class="keyword">return</span>;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// Find Video Encoder</span></span><br><span class="line"><span class="keyword">int</span> video_stream_index = <span class="number">-1</span>;</span><br><span class="line"><span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; format_context-&gt;nb_streams; i++) &#123;</span><br><span class="line">    <span class="comment">// Matching Video Stream</span></span><br><span class="line">    <span class="keyword">if</span> (format_context-&gt;streams[i]-&gt;codecpar-&gt;codec_type == AVMEDIA_TYPE_VIDEO) &#123;</span><br><span class="line">        video_stream_index = i;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// No video stream found</span></span><br><span class="line"><span class="keyword">if</span> (video_stream_index == <span class="number">-1</span>) &#123;</span><br><span class="line">    LOGE(<span class="string">"Player Error : Can not find video stream"</span>);</span><br><span class="line">    <span class="keyword">return</span>;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// Initialization of Video Encoder Context</span></span><br><span class="line">AVCodecContext *video_codec_context = avcodec_alloc_context3(<span class="literal">NULL</span>);</span><br><span class="line">avcodec_parameters_to_context(video_codec_context, format_context-&gt;streams[video_stream_index]-&gt;codecpar);</span><br><span class="line"><span class="comment">// Initialization of Video Encoder</span></span><br><span class="line">AVCodec *video_codec = avcodec_find_decoder(video_codec_context-&gt;codec_id);</span><br><span class="line"><span class="keyword">if</span> (video_codec == <span class="literal">NULL</span>) &#123;</span><br><span class="line">    LOGE(<span class="string">"Player Error : Can not find video codec"</span>);</span><br><span class="line">    <span class="keyword">return</span>;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// R3 Opens Video Decoder</span></span><br><span class="line">result  = avcodec_open2(video_codec_context, video_codec, <span class="literal">NULL</span>);</span><br><span class="line"><span class="keyword">if</span> (result &lt; <span class="number">0</span>) &#123;</span><br><span class="line">    LOGE(<span class="string">"Player Error : Can not find video stream"</span>);</span><br><span class="line">    <span class="keyword">return</span>;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// Getting the Width and Height of Video</span></span><br><span class="line"><span class="keyword">int</span> videoWidth = video_codec_context-&gt;width;</span><br><span class="line"><span class="keyword">int</span> videoHeight = video_codec_context-&gt;height;</span><br></pre></td></tr></table></figure>
+<p>其中 video_codec 代表解码器对象，其他对象在上一篇文章和代码注释中有相关解释。</p>
+<p>接下来的步骤就是解码和上屏，这里我们先看下我们的上屏是如何实现的；这里为了方便，我直接使用 SurfaceView 构建我们的上层 View</p>
+<figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="function"><span class="keyword">fun</span> <span class="title">onCreate</span><span class="params">(savedInstanceState: <span class="type">Bundle</span>?)</span></span> &#123;</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">    surfaceHolder = surfaceView.holder</span><br><span class="line">    surfaceHolder!!.setFormat(PixelFormat.RGBA_8888)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span> <span class="function"><span class="keyword">fun</span> <span class="title">playVideo</span><span class="params">(path: <span class="type">String</span>)</span></span> &#123;</span><br><span class="line">    Thread &#123;</span><br><span class="line">        mPlayer.playVideo(path, surfaceHolder!!.surface)</span><br><span class="line">    &#125;.start()</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// R4 Initializes Native Window s for Playing Videos</span></span><br><span class="line">ANativeWindow *native_window = ANativeWindow_fromSurface(env, surface); <span class="comment">// surface对应java层的surface对象</span></span><br><span class="line"><span class="keyword">if</span> (native_window == <span class="literal">NULL</span>) &#123;</span><br><span class="line">    LOGE(<span class="string">"Player Error : Can not create native window"</span>);</span><br><span class="line">    <span class="keyword">return</span>;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// Limit the number of pixels in the buffer by setting the width, not the physical display size of the screen.</span></span><br><span class="line"><span class="comment">// If the buffer does not match the display size of the physical screen, the actual display may be stretched or compressed images.</span></span><br><span class="line">result = ANativeWindow_setBuffersGeometry(native_window, videoWidth, videoHeight,WINDOW_FORMAT_RGBA_8888);</span><br><span class="line"><span class="keyword">if</span> (result &lt; <span class="number">0</span>)&#123;</span><br><span class="line">    LOGE(<span class="string">"Player Error : Can not set native window buffer"</span>);</span><br><span class="line">    ANativeWindow_release(native_window);</span><br><span class="line">    <span class="keyword">return</span>;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// Define drawing buffer</span></span><br><span class="line">ANativeWindow_Buffer window_buffer;</span><br><span class="line"><span class="comment">// There are three declarative data containers</span></span><br><span class="line"><span class="comment">// Data container Packet encoding data before R5 decoding</span></span><br><span class="line">AVPacket *packet = av_packet_alloc();</span><br><span class="line">av_init_packet(packet);</span><br><span class="line"><span class="comment">// Frame Pixel Data of Data Container After R6 Decoding Can't Play Pixel Data Directly and Need Conversion</span></span><br><span class="line">AVFrame *frame = av_frame_alloc();</span><br><span class="line"><span class="comment">// R7 converted data container where the data can be used for playback</span></span><br><span class="line">AVFrame *rgba_frame = av_frame_alloc();</span><br><span class="line"><span class="comment">// Data format conversion preparation</span></span><br><span class="line"><span class="comment">// Output Buffer</span></span><br><span class="line"><span class="keyword">int</span> buffer_size = av_image_get_buffer_size(AV_PIX_FMT_RGBA, videoWidth, videoHeight, <span class="number">1</span>);</span><br><span class="line"><span class="comment">// R8 Application for Buffer Memory</span></span><br><span class="line"><span class="keyword">uint8_t</span> *out_buffer = (<span class="keyword">uint8_t</span> *) av_malloc(buffer_size * <span class="keyword">sizeof</span>(<span class="keyword">uint8_t</span>));</span><br><span class="line">LOGI(<span class="string">"outBuffer size: %d, videoWidth: %d, videoHeight: %d, pix_fmt: %d"</span>, buffer_size * <span class="keyword">sizeof</span>(<span class="keyword">uint8_t</span>), videoWidth, videoHeight, video_codec_context-&gt;pix_fmt);</span><br><span class="line">av_image_fill_arrays(rgba_frame-&gt;data, rgba_frame-&gt;linesize, out_buffer, AV_PIX_FMT_RGBA, videoWidth, videoHeight, <span class="number">1</span>);</span><br><span class="line"><span class="comment">// R9 Data Format Conversion Context</span></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">SwsContext</span> *<span class="title">data_convert_context</span> = <span class="title">sws_getContext</span>(</span></span><br><span class="line"><span class="class">        <span class="title">videoWidth</span>, <span class="title">videoHeight</span>, <span class="title">video_codec_context</span>-&gt;<span class="title">pix_fmt</span>,</span></span><br><span class="line"><span class="class">        <span class="title">videoWidth</span>, <span class="title">videoHeight</span>, <span class="title">AV_PIX_FMT_RGBA</span>,</span></span><br><span class="line"><span class="class">        <span class="title">SWS_BICUBIC</span>, <span class="title">NULL</span>, <span class="title">NULL</span>, <span class="title">NULL</span>);</span></span><br><span class="line"><span class="comment">// Start reading frames</span></span><br></pre></td></tr></table></figure>
+<p>这里 ANative 相关代码都是 Android NDK 中的 api，可参考文档理解；这里主要看一下这里的 AVPacket 和 AVFrame 的使用</p>
+<p>AVPacket 在上一篇文章中有过介绍，它在 FFMpeg 中用来表示未解码时的数据；而 AVFrame 则表示了解码后的帧数据。</p>
+<p>但这里有一个小问题是我们解码后的图像格式可能是和我们的 surface 的渲染格式不同，这里我们的 surface 渲染格式是<code>RGBA8888</code>，而视频的图像格式不一定为这个格式。为了实现转换，我们就需要<code>SwsContext</code>对象来帮助我们实现图像格式的转换。</p>
+<p>看完上面后，终于来到了我们的解码 runloop</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">while</span> (av_read_frame(format_context, packet) &gt;= <span class="number">0</span>) &#123;</span><br><span class="line">    <span class="comment">// Matching Video Stream</span></span><br><span class="line">    <span class="keyword">if</span> (packet-&gt;stream_index == video_stream_index) &#123;</span><br><span class="line">        <span class="comment">// Decode video</span></span><br><span class="line">        result = avcodec_send_packet(video_codec_context, packet);</span><br><span class="line">        <span class="keyword">if</span> (result &lt; <span class="number">0</span> &amp;&amp; result != AVERROR(EAGAIN) &amp;&amp; result != AVERROR_EOF) &#123;</span><br><span class="line">            LOGE(<span class="string">"Player Error : codec step 1 fail"</span>);</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        result = avcodec_receive_frame(video_codec_context, frame);</span><br><span class="line">        <span class="keyword">if</span> (result &lt; <span class="number">0</span> &amp;&amp; result != AVERROR_EOF) &#123;</span><br><span class="line">            LOGE(<span class="string">"Player Error : codec step 2 fail"</span>);</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        LOGI(<span class="string">"Frame %c (%d, size=%d) pts %d dts %d key_frame %d [codec_picture_number %d, display_picture_number %d]"</span>,</span><br><span class="line">                av_get_picture_type_char(frame-&gt;pict_type), video_codec_context-&gt;frame_number,</span><br><span class="line">                frame-&gt;pkt_size,</span><br><span class="line">                frame-&gt;pts,</span><br><span class="line">                frame-&gt;pkt_dts,</span><br><span class="line">                frame-&gt;key_frame, frame-&gt;coded_picture_number, frame-&gt;display_picture_number);</span><br><span class="line">        <span class="comment">// Data Format Conversion</span></span><br><span class="line">        result = sws_scale(</span><br><span class="line">                data_convert_context,</span><br><span class="line">                frame-&gt;data, frame-&gt;linesize,</span><br><span class="line">                <span class="number">0</span>, videoHeight,</span><br><span class="line">                rgba_frame-&gt;data, rgba_frame-&gt;linesize);</span><br><span class="line">        <span class="comment">// play</span></span><br><span class="line">        result = ANativeWindow_lock(native_window, &amp;window_buffer, <span class="literal">NULL</span>);</span><br><span class="line">        <span class="keyword">if</span> (result &lt; <span class="number">0</span>) &#123;</span><br><span class="line">            LOGE(<span class="string">"Player Error : Can not lock native window"</span>);</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="comment">// Draw the image onto the interface</span></span><br><span class="line">            <span class="comment">// Note: The pixel lengths of rgba_frame row and window_buffer row may not be the same here.</span></span><br><span class="line">            <span class="comment">// Need to convert well or maybe screen</span></span><br><span class="line">            <span class="keyword">uint8_t</span> *bits = (<span class="keyword">uint8_t</span> *) window_buffer.bits;</span><br><span class="line">            <span class="keyword">for</span> (<span class="keyword">int</span> h = <span class="number">0</span>; h &lt; videoHeight; h++) &#123;</span><br><span class="line">                <span class="built_in">memcpy</span>(bits + h * window_buffer.stride * <span class="number">4</span>,</span><br><span class="line">                        out_buffer + h * rgba_frame-&gt;linesize[<span class="number">0</span>],</span><br><span class="line">                        rgba_frame-&gt;linesize[<span class="number">0</span>]);</span><br><span class="line">            &#125;</span><br><span class="line">            ANativeWindow_unlockAndPost(native_window);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// Release package references</span></span><br><span class="line">    av_packet_unref(packet);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>整个解码循环也是大致分为如下几个步骤</p>
+<ol>
+<li>通过 AVPacket 读取一块数据</li>
+<li>将 AVPacket 送给解码器使用</li>
+<li>通过 AVFrame 得到 2 中的解码后数据</li>
+<li>对 AVFrame 的图像格式进行转换</li>
+<li>将 4 中的结果上屏</li>
+</ol>
+<p>其他的注释在代码中有说明</p>
+<p>最后在 run-loop 外完成资源回收</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Release R9</span></span><br><span class="line">sws_freeContext(data_convert_context);</span><br><span class="line"><span class="comment">// Release R8</span></span><br><span class="line">av_free(out_buffer);</span><br><span class="line"><span class="comment">// Release R7</span></span><br><span class="line">av_frame_free(&amp;rgba_frame);</span><br><span class="line"><span class="comment">// Release R6</span></span><br><span class="line">av_frame_free(&amp;frame);</span><br><span class="line"><span class="comment">// Release R5</span></span><br><span class="line">av_packet_free(&amp;packet);</span><br><span class="line"><span class="comment">// Release R4</span></span><br><span class="line">ANativeWindow_release(native_window);</span><br><span class="line"><span class="comment">// Close R3</span></span><br><span class="line">avcodec_close(video_codec_context);</span><br><span class="line"><span class="comment">// Release R2</span></span><br><span class="line">avformat_close_input(&amp;format_context);</span><br><span class="line"><span class="comment">// Release R1</span></span><br><span class="line">env-&gt;ReleaseStringUTFChars(path_, path);</span><br></pre></td></tr></table></figure>
+<p>此时，我们就完成了整个视频的播放，不过这个播放器显然是处在不可用的状态，主要有下面两个问题</p>
+<ol>
+<li>没有声音</li>
+<li>视频的播放是按照解码器的解码速度播放的；只要解码器足够快，视频播放就有多快，这个显然是不符合播放器播放视频的预期的</li>
+</ol>
+<p>问题 2 本质就是我们常说的音视频同步问题；我们后面会简单介绍音频的解码播放后，通过引入 pts, dts 等概念后，尝试解决问题 2</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://tedaliez.github.io/2020/08/23/FFMpeg-Android%E5%BC%80%E5%8F%91-%E7%AE%80%E5%8D%95%E6%92%AD%E6%94%BE%E8%A7%86%E9%A2%91/" data-id="ckgx4rr6z0006i8x75s4o09bk" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2020/08/29/FFMpeg-Android%E5%BC%80%E5%8F%91-%E7%AE%80%E5%8D%95%E6%92%AD%E6%94%BE%E9%9F%B3%E9%A2%91/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          FFMpeg-Android开发-简单播放音频
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2020/08/22/FFMpeg-Android%E5%BC%80%E5%8F%91-%E8%A7%A3%E6%9E%90%E8%A7%86%E9%A2%91%E6%A0%BC%E5%BC%8F/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">FFMpeg-Android开发-解析视频格式</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/Android-ROOM/" rel="tag">Android, ROOM</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/NDK/" rel="tag">NDK</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/TypeScript/" rel="tag">TypeScript</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/WebAssembly/" rel="tag">WebAssembly</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/WebView-JSBridge/" rel="tag">WebView, JSBridge</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/android/" rel="tag">android</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/android-jetpack-compose/" rel="tag">android, jetpack compose</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/android-mmkv/" rel="tag">android, mmkv</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/android-textview/" rel="tag">android, textview</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/kotlin/" rel="tag">kotlin</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/kotlin-coroutine/" rel="tag">kotlin, coroutine</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/kotlin-%E5%8D%8F%E7%A8%8B/" rel="tag">kotlin, 协程</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/v8-WebAssembly/" rel="tag">v8, WebAssembly</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/Android-ROOM/" style="font-size: 10px;">Android, ROOM</a> <a href="/tags/NDK/" style="font-size: 10px;">NDK</a> <a href="/tags/TypeScript/" style="font-size: 10px;">TypeScript</a> <a href="/tags/WebAssembly/" style="font-size: 15px;">WebAssembly</a> <a href="/tags/WebView-JSBridge/" style="font-size: 10px;">WebView, JSBridge</a> <a href="/tags/android/" style="font-size: 15px;">android</a> <a href="/tags/android-jetpack-compose/" style="font-size: 10px;">android, jetpack compose</a> <a href="/tags/android-mmkv/" style="font-size: 20px;">android, mmkv</a> <a href="/tags/android-textview/" style="font-size: 10px;">android, textview</a> <a href="/tags/kotlin/" style="font-size: 10px;">kotlin</a> <a href="/tags/kotlin-coroutine/" style="font-size: 10px;">kotlin, coroutine</a> <a href="/tags/kotlin-%E5%8D%8F%E7%A8%8B/" style="font-size: 10px;">kotlin, 协程</a> <a href="/tags/v8-WebAssembly/" style="font-size: 10px;">v8, WebAssembly</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/09/">September 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/08/">August 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/07/">July 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/05/">May 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/03/">March 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/02/">February 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/01/">January 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/12/">December 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/11/">November 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/09/">September 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/07/">July 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/06/">June 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/05/">May 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/03/">March 2019</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2020/09/13/FFMpeg-Android%E5%BC%80%E5%8F%91-%E7%AE%80%E5%8D%95%E9%9F%B3%E8%A7%86%E9%A2%91%E5%90%8C%E6%AD%A5/">FFMpeg-Android开发-简单音视频同步</a>
+          </li>
+        
+          <li>
+            <a href="/2020/09/12/Kotlin%E5%8D%8F%E7%A8%8B%E5%BC%82%E5%B8%B8%E5%A4%84%E7%90%86/">Kotlin协程异常处理</a>
+          </li>
+        
+          <li>
+            <a href="/2020/08/29/FFMpeg-Android%E5%BC%80%E5%8F%91-%E7%AE%80%E5%8D%95%E6%92%AD%E6%94%BE%E9%9F%B3%E9%A2%91/">FFMpeg-Android开发-简单播放音频</a>
+          </li>
+        
+          <li>
+            <a href="/2020/08/23/FFMpeg-Android%E5%BC%80%E5%8F%91-%E7%AE%80%E5%8D%95%E6%92%AD%E6%94%BE%E8%A7%86%E9%A2%91/">FFMpeg-Android开发-简单播放视频</a>
+          </li>
+        
+          <li>
+            <a href="/2020/08/22/FFMpeg-Android%E5%BC%80%E5%8F%91-%E8%A7%A3%E6%9E%90%E8%A7%86%E9%A2%91%E6%A0%BC%E5%BC%8F/">FFMpeg-Android开发-解析视频格式</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2020 Jian Guo<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+  </div>
+</body>
+</html>

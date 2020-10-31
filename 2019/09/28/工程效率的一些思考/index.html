@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+
+  
+  <title>工程效率的一些思考 | Aichi_B7A</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="有关工程效率的一些思考最近工作中花了很多时间处理了团队的devops和版本控制协作的问题，有了一些不成熟的想法，正好也是来到公司刚好一年的时间，借这个机会沉淀一下。 使用键盘，而非UI我自己使用过一年的Linux作为主力开发环境，同时也有3年左右的Linux服务器维护的经历。这些经历让我更加习惯Shell环境，因此我也有一个习惯，任何开发环境，我一定会使用Shell辅助我开发，同时使用IDE等工具">
+<meta property="og:type" content="article">
+<meta property="og:title" content="工程效率的一些思考">
+<meta property="og:url" content="https://tedaliez.github.io/2019/09/28/%E5%B7%A5%E7%A8%8B%E6%95%88%E7%8E%87%E7%9A%84%E4%B8%80%E4%BA%9B%E6%80%9D%E8%80%83/index.html">
+<meta property="og:site_name" content="Aichi_B7A">
+<meta property="og:description" content="有关工程效率的一些思考最近工作中花了很多时间处理了团队的devops和版本控制协作的问题，有了一些不成熟的想法，正好也是来到公司刚好一年的时间，借这个机会沉淀一下。 使用键盘，而非UI我自己使用过一年的Linux作为主力开发环境，同时也有3年左右的Linux服务器维护的经历。这些经历让我更加习惯Shell环境，因此我也有一个习惯，任何开发环境，我一定会使用Shell辅助我开发，同时使用IDE等工具">
+<meta property="og:locale">
+<meta property="article:published_time" content="2019-09-28T02:00:25.000Z">
+<meta property="article:modified_time" content="2019-09-28T03:23:05.454Z">
+<meta property="article:author" content="Jian Guo">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="/atom.xml" title="Aichi_B7A" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+<meta name="generator" content="Hexo 5.2.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Aichi_B7A</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="https://tedaliez.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-工程效率的一些思考" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2019/09/28/%E5%B7%A5%E7%A8%8B%E6%95%88%E7%8E%87%E7%9A%84%E4%B8%80%E4%BA%9B%E6%80%9D%E8%80%83/" class="article-date">
+  <time datetime="2019-09-28T02:00:25.000Z" itemprop="datePublished">2019-09-28</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      工程效率的一些思考
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h1 id="有关工程效率的一些思考"><a href="#有关工程效率的一些思考" class="headerlink" title="有关工程效率的一些思考"></a>有关工程效率的一些思考</h1><p>最近工作中花了很多时间处理了团队的devops和版本控制协作的问题，有了一些不成熟的想法，正好也是来到公司刚好一年的时间，借这个机会沉淀一下。</p>
+<h2 id="使用键盘，而非UI"><a href="#使用键盘，而非UI" class="headerlink" title="使用键盘，而非UI"></a>使用键盘，而非UI</h2><p>我自己使用过一年的Linux作为主力开发环境，同时也有3年左右的Linux服务器维护的经历。这些经历让我更加习惯Shell环境，因此我也有一个习惯，任何开发环境，我一定会使用Shell辅助我开发，同时使用IDE等工具时，总是习惯尽可能用其快捷键位进行操作。</p>
+<p>很有意思的是，我在大学期间认识的一部分朋友，大都也有这样类似的习惯。然而现在我身边还是有不少人习惯于用UI的交互方式进行日常开发，而用UI的结果往往是花费了更多时间去处理交互问题，这些交互问题浪费的时间最后积少成多拖慢了整个开发效率。</p>
+<h3 id="Shell和UI的本质"><a href="#Shell和UI的本质" class="headerlink" title="Shell和UI的本质"></a>Shell和UI的本质</h3><p>Shell的本质其实是一个REPL(Read-Evaluate-Print-Loop)，当我们使用Shell操作时，本身就是把自己的操作<strong>用文本线性地进行记录</strong></p>
+<p>而我们绝大部分时候使用的UI交互工具，往往都是在Shell命令基础上做了层UI交互的封装。基于此我提出一个自己的论断，欢迎打脸:</p>
+<blockquote>
+<p>任何UI工具的功能必然是某一个或多个Shell命令对应功能的子集，并且这个Shell命令必然早于UI工具诞生</p>
+</blockquote>
+<p>我也问过他们为什么更加喜欢用UI(鼠标)来完成日常的开发任务，原因无外乎:</p>
+<ol>
+<li>UI更直观</li>
+<li>UI更易懂，直接用UI比起用键盘更”快”</li>
+</ol>
+<p>但实际果真如此吗？</p>
+<h3 id="UI交互真的直观吗"><a href="#UI交互真的直观吗" class="headerlink" title="UI交互真的直观吗"></a>UI交互真的直观吗</h3><p>我想到近日有很多时间，我都在帮助我的同事解决他们遇到的各种Git问题。但遇到的情况大都是:</p>
+<blockquote>
+<p>我用了UI上的XXX按钮，点了几个选择框后发现后续的功能没办法继续用了</p>
+</blockquote>
+<p>同时附上一些截图到我的企业IM，问我为什么。</p>
+<p>说实话这样我也不知道为什么会出现这个问题。</p>
+<p>那假如我们换种描述方式呢？</p>
+<blockquote>
+<p>我执行git merge –no-ff xxx &amp;&amp; git pull -r后，我的merge commit不见了，这是为什么呢？</p>
+</blockquote>
+<p>在我看来，下面这种描述是更容易理解和定位问题的，这也是我一直热衷于使用Shell操作的原因。</p>
+<p>UI交互相比Shell虽然优化了展示信息的方式，但也增加了你理解和另一个人理解的难度，这有几个原因：</p>
+<ol>
+<li>UI封装后，部分描述会跟其对应Shell的描述不一致</li>
+<li>UI封装后为了尽可能地展示信息，会将信息和选项罗列，换句话说，你需要同时理解这个UI上的所有信息</li>
+</ol>
+<p>UI本身不是文本，其表述方式往往是模糊不清的(如某个确定按钮, 某个选项卡等)，这样就只能用图片等方式辅助描述。因此，当你在UI上操作出现问题时，他需要首先理解这个UI所展示的上下文环境后，才能明白你要发生了什么。如果这个UI本身的描述和其对应的Shell不一致，那么你们就会面临一个黑盒，这个黑盒是需要额外的手段才能破解的(如此UI工具的帮助文档等)</p>
+<p>所以，UI的直观，只是单纯的在画面上的直观，但是比起工程上要求的精准，UI是绝对不合格的。工程上要求的直观，应该是<strong>正确的</strong>直观。</p>
+<h3 id="UI交互真的比键盘交互快吗"><a href="#UI交互真的比键盘交互快吗" class="headerlink" title="UI交互真的比键盘交互快吗"></a>UI交互真的比键盘交互快吗</h3><p>很多人觉得鼠标点击是很快的一件事情，但实际上也不是这样。在一个复杂的UI环境，找到一个功能往往需要非常深的操作路径才能找到。而鼠标本身是一个定位精确度差的硬件，远不如键盘这样按下哪个键就来哪个键精准，操作鼠标还需要更多时间去定位，因此操作上显然还是键盘来的更加精准和快捷。</p>
+<h2 id="我们该如何培养使用键盘的意识"><a href="#我们该如何培养使用键盘的意识" class="headerlink" title="我们该如何培养使用键盘的意识"></a>我们该如何培养使用键盘的意识</h2><p>很多时候我们的困境是我们并不知道有更好的方式，所以只能保持现状。我在这里给一些如何培养自己多使用键盘提升开发效率的建议，总的来说就是一点:</p>
+<blockquote>
+<p>DRY(Don’t Repeat Yourself) &amp;&amp; Search</p>
+</blockquote>
+<p>当你发现有一个UI操作范式你在反复使用时，不妨试着把它转换为一个键盘操作或者Shell命令，然后去使用这个你转换的结果；如果你发现这个操作范式可以被优化，试着去Google一下，往往会有很多人会有类似的疑问，而他们也会给你一个高效的操作方式。大家都是很懒的，没人愿意反复一个枯燥的<strong>点点点操作</strong>。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://tedaliez.github.io/2019/09/28/%E5%B7%A5%E7%A8%8B%E6%95%88%E7%8E%87%E7%9A%84%E4%B8%80%E4%BA%9B%E6%80%9D%E8%80%83/" data-id="ckgx4rr7x0018i8x7hlpk2mug" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2019/11/16/Android%E8%87%AA%E5%AE%9A%E4%B9%89View%E4%B8%AD%E4%B8%80%E4%BA%9B%E5%8F%82%E6%95%B0%E7%9A%84%E5%90%AB%E4%B9%89/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          Android自定义View中一些参数的含义
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2019/07/14/CanvasKit%E7%AE%80%E4%BB%8B/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">CanvasKit简介</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/Android-ROOM/" rel="tag">Android, ROOM</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/NDK/" rel="tag">NDK</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/TypeScript/" rel="tag">TypeScript</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/WebAssembly/" rel="tag">WebAssembly</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/WebView-JSBridge/" rel="tag">WebView, JSBridge</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/android/" rel="tag">android</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/android-jetpack-compose/" rel="tag">android, jetpack compose</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/android-mmkv/" rel="tag">android, mmkv</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/android-textview/" rel="tag">android, textview</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/kotlin/" rel="tag">kotlin</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/kotlin-coroutine/" rel="tag">kotlin, coroutine</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/kotlin-%E5%8D%8F%E7%A8%8B/" rel="tag">kotlin, 协程</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/v8-WebAssembly/" rel="tag">v8, WebAssembly</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/Android-ROOM/" style="font-size: 10px;">Android, ROOM</a> <a href="/tags/NDK/" style="font-size: 10px;">NDK</a> <a href="/tags/TypeScript/" style="font-size: 10px;">TypeScript</a> <a href="/tags/WebAssembly/" style="font-size: 15px;">WebAssembly</a> <a href="/tags/WebView-JSBridge/" style="font-size: 10px;">WebView, JSBridge</a> <a href="/tags/android/" style="font-size: 15px;">android</a> <a href="/tags/android-jetpack-compose/" style="font-size: 10px;">android, jetpack compose</a> <a href="/tags/android-mmkv/" style="font-size: 20px;">android, mmkv</a> <a href="/tags/android-textview/" style="font-size: 10px;">android, textview</a> <a href="/tags/kotlin/" style="font-size: 10px;">kotlin</a> <a href="/tags/kotlin-coroutine/" style="font-size: 10px;">kotlin, coroutine</a> <a href="/tags/kotlin-%E5%8D%8F%E7%A8%8B/" style="font-size: 10px;">kotlin, 协程</a> <a href="/tags/v8-WebAssembly/" style="font-size: 10px;">v8, WebAssembly</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/09/">September 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/08/">August 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/07/">July 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/05/">May 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/03/">March 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/02/">February 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/01/">January 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/12/">December 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/11/">November 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/09/">September 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/07/">July 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/06/">June 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/05/">May 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/03/">March 2019</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2020/09/13/FFMpeg-Android%E5%BC%80%E5%8F%91-%E7%AE%80%E5%8D%95%E9%9F%B3%E8%A7%86%E9%A2%91%E5%90%8C%E6%AD%A5/">FFMpeg-Android开发-简单音视频同步</a>
+          </li>
+        
+          <li>
+            <a href="/2020/09/12/Kotlin%E5%8D%8F%E7%A8%8B%E5%BC%82%E5%B8%B8%E5%A4%84%E7%90%86/">Kotlin协程异常处理</a>
+          </li>
+        
+          <li>
+            <a href="/2020/08/29/FFMpeg-Android%E5%BC%80%E5%8F%91-%E7%AE%80%E5%8D%95%E6%92%AD%E6%94%BE%E9%9F%B3%E9%A2%91/">FFMpeg-Android开发-简单播放音频</a>
+          </li>
+        
+          <li>
+            <a href="/2020/08/23/FFMpeg-Android%E5%BC%80%E5%8F%91-%E7%AE%80%E5%8D%95%E6%92%AD%E6%94%BE%E8%A7%86%E9%A2%91/">FFMpeg-Android开发-简单播放视频</a>
+          </li>
+        
+          <li>
+            <a href="/2020/08/22/FFMpeg-Android%E5%BC%80%E5%8F%91-%E8%A7%A3%E6%9E%90%E8%A7%86%E9%A2%91%E6%A0%BC%E5%BC%8F/">FFMpeg-Android开发-解析视频格式</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2020 Jian Guo<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+  </div>
+</body>
+</html>

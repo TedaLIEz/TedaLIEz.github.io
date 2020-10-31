@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+
+  
+  <title>Android自定义View中一些参数的含义 | Aichi_B7A</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="Android 自定义 View 中一些参数的含义 TL;DR AttributeSet defStyleAttr defStyleRes   小结 P.S 为什么不使用集联方式实现自定义 View References    Android 自定义 View 中一些参数的含义TL;DR不要理会View(Context, AttributeSet, defStyleAttr)和View(Cont">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Android自定义View中一些参数的含义">
+<meta property="og:url" content="https://tedaliez.github.io/2019/11/16/Android%E8%87%AA%E5%AE%9A%E4%B9%89View%E4%B8%AD%E4%B8%80%E4%BA%9B%E5%8F%82%E6%95%B0%E7%9A%84%E5%90%AB%E4%B9%89/index.html">
+<meta property="og:site_name" content="Aichi_B7A">
+<meta property="og:description" content="Android 自定义 View 中一些参数的含义 TL;DR AttributeSet defStyleAttr defStyleRes   小结 P.S 为什么不使用集联方式实现自定义 View References    Android 自定义 View 中一些参数的含义TL;DR不要理会View(Context, AttributeSet, defStyleAttr)和View(Cont">
+<meta property="og:locale">
+<meta property="article:published_time" content="2019-11-16T12:31:21.000Z">
+<meta property="article:modified_time" content="2019-11-16T12:32:24.413Z">
+<meta property="article:author" content="Jian Guo">
+<meta property="article:tag" content="android">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="/atom.xml" title="Aichi_B7A" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+<meta name="generator" content="Hexo 5.2.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Aichi_B7A</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="https://tedaliez.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-Android自定义View中一些参数的含义" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2019/11/16/Android%E8%87%AA%E5%AE%9A%E4%B9%89View%E4%B8%AD%E4%B8%80%E4%BA%9B%E5%8F%82%E6%95%B0%E7%9A%84%E5%90%AB%E4%B9%89/" class="article-date">
+  <time datetime="2019-11-16T12:31:21.000Z" itemprop="datePublished">2019-11-16</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      Android自定义View中一些参数的含义
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <ul>
+<li><a href="#android-%e8%87%aa%e5%ae%9a%e4%b9%89-view-%e4%b8%ad%e4%b8%80%e4%ba%9b%e5%8f%82%e6%95%b0%e7%9a%84%e5%90%ab%e4%b9%89">Android 自定义 View 中一些参数的含义</a><ul>
+<li><a href="#tldr">TL;DR</a><ul>
+<li><a href="#attributeset">AttributeSet</a></li>
+<li><a href="#defstyleattr">defStyleAttr</a></li>
+<li><a href="#defstyleres">defStyleRes</a></li>
+</ul>
+</li>
+<li><a href="#%e5%b0%8f%e7%bb%93">小结</a></li>
+<li><a href="#ps-%e4%b8%ba%e4%bb%80%e4%b9%88%e4%b8%8d%e4%bd%bf%e7%94%a8%e9%9b%86%e8%81%94%e6%96%b9%e5%bc%8f%e5%ae%9e%e7%8e%b0%e8%87%aa%e5%ae%9a%e4%b9%89-view">P.S 为什么不使用集联方式实现自定义 View</a></li>
+<li><a href="#references">References</a></li>
+</ul>
+</li>
+</ul>
+<h1 id="Android-自定义-View-中一些参数的含义"><a href="#Android-自定义-View-中一些参数的含义" class="headerlink" title="Android 自定义 View 中一些参数的含义"></a>Android 自定义 View 中一些参数的含义</h1><h2 id="TL-DR"><a href="#TL-DR" class="headerlink" title="TL;DR"></a>TL;DR</h2><p>不要理会<code>View(Context, AttributeSet, defStyleAttr)</code>和<code>View(Context, AttributeSet, defStyleAttr, defStyleRes)</code>, 关心<code>View(Context)</code>, <code>View(Context, AttributeSet)</code>, 范例代码:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">MyView</span> <span class="keyword">extends</span> <span class="title">SomeView</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">MyView</span><span class="params">(Context context)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">super</span>(context);</span><br><span class="line">        init(context, <span class="keyword">null</span>, <span class="number">0</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">MyView</span><span class="params">(Context context, AttributeSet attrs)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">super</span>(context,attrs);</span><br><span class="line">        init(context, attrs, <span class="number">0</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">MyView</span><span class="params">(Context context, AttributeSet attrs, <span class="keyword">int</span> defStyle)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">super</span>(context, attrs, defStyle);</span><br><span class="line">        init(context, attrs, defStyle);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">init</span><span class="params">(Context context, AttributeSet attrs, <span class="keyword">int</span> defStyle)</span> </span>&#123;</span><br><span class="line">        <span class="comment">// do something cool</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="AttributeSet"><a href="#AttributeSet" class="headerlink" title="AttributeSet"></a>AttributeSet</h3><p>这个参数代表了所有在 XML 中申明的属性, 例如:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">&lt;TextView</span><br><span class="line">    android:layout_width=<span class="string">"wrap_content"</span></span><br><span class="line">    android:layout_height=<span class="string">"wrap_content"</span></span><br><span class="line">    android:text=<span class="string">"@string/hello"</span></span><br><span class="line">    undeclaredAttr=<span class="string">"value for undeclared attr"</span> /&gt;</span><br></pre></td></tr></table></figure>
+<p>所有 XML 中调用都会涉及 View 的两个参数的构造函数, 此时 AttributeSet 就会包含四个属性: <code>layout_width</code>, <code>layout_height</code>, <code>text</code>, <code>undeclaredAttr</code></p>
+<p>可能有的人会好奇这些属性是从哪里来的，实际上在自定义 View 时，我们可以在 attrs 中声明<code>declare-styleable</code>来为我们的 View 增加属性, 例如:</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">declare-styleable</span> <span class="attr">name</span>=<span class="string">"ImageView"</span>&gt;</span></span><br><span class="line">  <span class="comment">&lt;!-- Sets a drawable as the content of this ImageView. --&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">attr</span> <span class="attr">name</span>=<span class="string">"src"</span> <span class="attr">format</span>=<span class="string">"reference|color"</span> /&gt;</span></span><br><span class="line"></span><br><span class="line">  <span class="comment">&lt;!-- ...snipped for brevity... --&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;/<span class="name">declare-styleable</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<p>上面这个就是 ImageView 中 src 属性的由来, 有了这个定义, Android 的 ImageView 才能通过 xml 来设置 src 属性</p>
+<p>通常在<code>View(Context context, AttributeSet attrs)</code>, 我们会使用<code>Theme.obtainStyledAttributes(android.util.AttributeSet, int[], int, int)</code>来获取 AttributeSet 中的属性, 主要原因是因为我们往往需要依赖一套机制来解决在 xml 配置时使用的各种关系</p>
+<blockquote>
+<p>For example, if you define style=@style/MyStyle in your XML, this method resolves MyStyle and adds its attributes to the mix. In the end, obtainStyledAttributes() returns a TypedArray which you can use to access the attributes.</p>
+</blockquote>
+<h3 id="defStyleAttr"><a href="#defStyleAttr" class="headerlink" title="defStyleAttr"></a>defStyleAttr</h3><p>View 的构造函数有一种方法签名: <code>View(Context context, AttributeSet attrs, int defStyleAttr)</code>, 其中的 defStyleAttr 是什么含义呢？</p>
+<p>defStyleAttr 可以理解为是你的 View 的默认风格，例如，你希望你 app 中的所有 MaterialButton 最小高度都为 72dp，那么你可以在你 app 中的 style.xml 中声明:</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">style</span> <span class="attr">name</span>=<span class="string">"Theme.Demo"</span>&gt;</span><span class="undefined"></span></span><br><span class="line"><span class="undefined">    ...</span></span><br><span class="line"><span class="xml">    <span class="tag">&lt;<span class="name">item</span> <span class="attr">name</span>=<span class="string">"materialButtonStyle"</span>&gt;</span>@style/BigButton<span class="tag">&lt;/<span class="name">item</span>&gt;</span></span></span><br><span class="line"><span class="undefined"></span><span class="tag">&lt;/<span class="name">style</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">style</span> <span class="attr">name</span>=<span class="string">"BigButton"</span> <span class="attr">parent</span>=<span class="string">"Widget.MaterialComponents.Button"</span>&gt;</span><span class="undefined"></span></span><br><span class="line"><span class="xml">    <span class="tag">&lt;<span class="name">item</span> <span class="attr">name</span>=<span class="string">"android:minHeight"</span>&gt;</span>72dp<span class="tag">&lt;/<span class="name">item</span>&gt;</span></span></span><br><span class="line"><span class="undefined"></span><span class="tag">&lt;/<span class="name">style</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<p>这里 MaterialButton 构造时使用的 defStyleAttr 即<code>R.attr.materialButtonStyle</code>, 我们在<code>Theme.Demo</code>的 style 配置中定义了我们自己的<code>materialButtonStyle</code>, 因此 App 内所有用的 MaterialButton 最小高度就是 72dp 了</p>
+<p>实际上在上一个 Part 中我们提到<code>Theme.obtainStyledAttributes(android.util.AttributeSet, int[], int, int)</code>时会发现其第三个参数名也是 defStyleAttr, 这里的<code>defStyleAttr</code>和我们在 View 的构造函数里面表达的是同一个意思. 这里举个例子方便大家理解, 以 Android 的 TextView 举例:</p>
+<p>首先我们需要声明一下我们 TextView 支持的属性:</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">resources</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">declare-styleable</span> <span class="attr">name</span>=<span class="string">"Theme"</span>&gt;</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">&lt;!-- ...snip... --&gt;</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">&lt;!-- Default TextView style. --&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">attr</span> <span class="attr">name</span>=<span class="string">"textViewStyle"</span> <span class="attr">format</span>=<span class="string">"reference"</span> /&gt;</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">&lt;!-- ...etc... --&gt;</span></span><br><span class="line"></span><br><span class="line">  <span class="tag">&lt;/<span class="name">declare-styleable</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">resource</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<p>这里的 textViewStyle 被我们声明为 reference, 即 textViewStyle 可以被定义为某一种 style</p>
+<p>接着我们声明一下我们的 style</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">resources</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">style</span> <span class="attr">name</span>=<span class="string">"Theme"</span>&gt;</span><span class="undefined"></span></span><br><span class="line"><span class="undefined"></span></span><br><span class="line"><span class="xml">    <span class="comment">&lt;!-- ...snip... --&gt;</span></span></span><br><span class="line"><span class="undefined"></span></span><br><span class="line"><span class="xml">    <span class="tag">&lt;<span class="name">item</span> <span class="attr">name</span>=<span class="string">"textViewStyle"</span>&gt;</span>@style/Widget.TextView<span class="tag">&lt;/<span class="name">item</span>&gt;</span></span></span><br><span class="line"><span class="undefined"></span></span><br><span class="line"><span class="xml">    <span class="comment">&lt;!-- ...etc... --&gt;</span></span></span><br><span class="line"><span class="undefined"></span></span><br><span class="line"><span class="undefined">  </span><span class="tag">&lt;/<span class="name">style</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">resource</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<p>在 Manifest 中我们声明使用此 style</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">activity</span></span></span><br><span class="line"><span class="tag">  <span class="attr">android:name</span>=<span class="string">".MyActivity"</span></span></span><br><span class="line"><span class="tag">  <span class="attr">android:theme</span>=<span class="string">"@style/Theme"</span></span></span><br><span class="line"><span class="tag">  /&gt;</span></span><br></pre></td></tr></table></figure>
+<p>接着在 TextView 构造时我们调用:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">TypedArray ta = theme.obtainStyledAttributes(attrs, R.styleable.TextView, R.attr.textViewStyle, <span class="number">0</span>);</span><br></pre></td></tr></table></figure>
+<p>此时会产生如下的结果:</p>
+<ol>
+<li>任何在 xml 中显式定义的属性会优先返回</li>
+<li>如果 xml 中没有定义的属性, 那么会从<code>R.styleable.TextView</code>指向的 style, 在这里即<code>@style/Widget.TextView</code>, 取出</li>
+</ol>
+<h3 id="defStyleRes"><a href="#defStyleRes" class="headerlink" title="defStyleRes"></a>defStyleRes</h3><p>View 的构造函数中还有最后一种: <code>View(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes)</code>, 其中的 defStyleRes 又是什么意思呢？</p>
+<p>简单来说, 当 defStyleAttr 为 0 或者没有在当前主题中设置 defStyleAttr 时, 就会使用 defStyleRes 对应的 style 来构造这个 View</p>
+<h2 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h2><p>列举一下在不同位置设置的属性使用的优先级，简单来说优先级从高到低如下排列:</p>
+<pre><code>1. Any value defined in the AttributeSet.
+2. The style resource defined in the AttributeSet (i.e. style=@style/blah).
+3. The default style attribute specified by defStyleAttr.
+4. The default style resource specified by defStyleResource (if there was no defStyleAttr).
+5. Values in the theme.
+</code></pre><h2 id="P-S-为什么不使用集联方式实现自定义-View"><a href="#P-S-为什么不使用集联方式实现自定义-View" class="headerlink" title="P.S 为什么不使用集联方式实现自定义 View"></a>P.S 为什么不使用集联方式实现自定义 View</h2><p>这里有一点需要注意, 往往我们会采用如下方式实现自定义 View:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">MyView</span> <span class="keyword">extends</span> <span class="title">SomeView</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">MyView</span><span class="params">(Context context)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">this</span>(context, <span class="keyword">null</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">MyView</span><span class="params">(Context context, AttributeSet attrs)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">this</span>(context,attrs, <span class="number">0</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">MyView</span><span class="params">(Context context, AttributeSet attrs, <span class="keyword">int</span> defStyle)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">super</span>(context, attrs, defStyle);</span><br><span class="line">        <span class="comment">// do something cool</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这种写法被称为<code>telescopic constructor</code></p>
+<p>但这样写有可能会丢掉继承自 SomeView 的默认风格配置, 因为很有可能 SomeView 就是用集联方式实现构造的, 例如:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="title">SomeView</span><span class="params">(Context context)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">this</span>(context, <span class="keyword">null</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="title">SomeView</span><span class="params">(Context context, @Nullable AttributeSet attrs)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">this</span>(context, attrs, com.android.internal.R.attr.textViewStyle);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="title">SomeView</span><span class="params">(Context context, @Nullable AttributeSet attrs, <span class="keyword">int</span> defStyleAttr)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">this</span>(context, attrs, defStyleAttr, <span class="number">0</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>如果你在<code>MyView(Context)</code>中没有调用<code>super(context)</code>, 那么你就会丢掉<code>com.android.internal.R.attr.textViewStyle</code>的所有默认属性值, 会给你造成一些麻烦, 因此建议参考<a href="#tldr">TL;DR</a>中的方式实现自定义 View 的构造</p>
+<h2 id="References"><a href="#References" class="headerlink" title="References"></a>References</h2><p><a href="https://stackoverflow.com/a/34301725/4380801" target="_blank" rel="noopener">Stackoverflow</a><br><a href="https://blog.danlew.net/2016/07/19/a-deep-dive-into-android-view-constructors/" target="_blank" rel="noopener">A deep dive into Android View constructors</a><br><a href="https://ataulm.github.io/2019/10/28/resolving-view-attributes.html" target="_blank" rel="noopener">Resolving View Attributes on Android</a></p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://tedaliez.github.io/2019/11/16/Android%E8%87%AA%E5%AE%9A%E4%B9%89View%E4%B8%AD%E4%B8%80%E4%BA%9B%E5%8F%82%E6%95%B0%E7%9A%84%E5%90%AB%E4%B9%89/" data-id="ckgx4rr6w0004i8x7ihdskhsa" class="article-share-link">Share</a>
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/android/" rel="tag">android</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2019/12/07/Kotlin%E5%8D%8F%E7%A8%8B%E5%AE%9E%E6%88%98/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          Kotlin协程实战
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2019/09/28/%E5%B7%A5%E7%A8%8B%E6%95%88%E7%8E%87%E7%9A%84%E4%B8%80%E4%BA%9B%E6%80%9D%E8%80%83/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">工程效率的一些思考</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/Android-ROOM/" rel="tag">Android, ROOM</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/NDK/" rel="tag">NDK</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/TypeScript/" rel="tag">TypeScript</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/WebAssembly/" rel="tag">WebAssembly</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/WebView-JSBridge/" rel="tag">WebView, JSBridge</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/android/" rel="tag">android</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/android-jetpack-compose/" rel="tag">android, jetpack compose</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/android-mmkv/" rel="tag">android, mmkv</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/android-textview/" rel="tag">android, textview</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/kotlin/" rel="tag">kotlin</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/kotlin-coroutine/" rel="tag">kotlin, coroutine</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/kotlin-%E5%8D%8F%E7%A8%8B/" rel="tag">kotlin, 协程</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/v8-WebAssembly/" rel="tag">v8, WebAssembly</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/Android-ROOM/" style="font-size: 10px;">Android, ROOM</a> <a href="/tags/NDK/" style="font-size: 10px;">NDK</a> <a href="/tags/TypeScript/" style="font-size: 10px;">TypeScript</a> <a href="/tags/WebAssembly/" style="font-size: 15px;">WebAssembly</a> <a href="/tags/WebView-JSBridge/" style="font-size: 10px;">WebView, JSBridge</a> <a href="/tags/android/" style="font-size: 15px;">android</a> <a href="/tags/android-jetpack-compose/" style="font-size: 10px;">android, jetpack compose</a> <a href="/tags/android-mmkv/" style="font-size: 20px;">android, mmkv</a> <a href="/tags/android-textview/" style="font-size: 10px;">android, textview</a> <a href="/tags/kotlin/" style="font-size: 10px;">kotlin</a> <a href="/tags/kotlin-coroutine/" style="font-size: 10px;">kotlin, coroutine</a> <a href="/tags/kotlin-%E5%8D%8F%E7%A8%8B/" style="font-size: 10px;">kotlin, 协程</a> <a href="/tags/v8-WebAssembly/" style="font-size: 10px;">v8, WebAssembly</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/09/">September 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/08/">August 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/07/">July 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/05/">May 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/03/">March 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/02/">February 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/01/">January 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/12/">December 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/11/">November 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/09/">September 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/07/">July 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/06/">June 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/05/">May 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/03/">March 2019</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2020/09/13/FFMpeg-Android%E5%BC%80%E5%8F%91-%E7%AE%80%E5%8D%95%E9%9F%B3%E8%A7%86%E9%A2%91%E5%90%8C%E6%AD%A5/">FFMpeg-Android开发-简单音视频同步</a>
+          </li>
+        
+          <li>
+            <a href="/2020/09/12/Kotlin%E5%8D%8F%E7%A8%8B%E5%BC%82%E5%B8%B8%E5%A4%84%E7%90%86/">Kotlin协程异常处理</a>
+          </li>
+        
+          <li>
+            <a href="/2020/08/29/FFMpeg-Android%E5%BC%80%E5%8F%91-%E7%AE%80%E5%8D%95%E6%92%AD%E6%94%BE%E9%9F%B3%E9%A2%91/">FFMpeg-Android开发-简单播放音频</a>
+          </li>
+        
+          <li>
+            <a href="/2020/08/23/FFMpeg-Android%E5%BC%80%E5%8F%91-%E7%AE%80%E5%8D%95%E6%92%AD%E6%94%BE%E8%A7%86%E9%A2%91/">FFMpeg-Android开发-简单播放视频</a>
+          </li>
+        
+          <li>
+            <a href="/2020/08/22/FFMpeg-Android%E5%BC%80%E5%8F%91-%E8%A7%A3%E6%9E%90%E8%A7%86%E9%A2%91%E6%A0%BC%E5%BC%8F/">FFMpeg-Android开发-解析视频格式</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2020 Jian Guo<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+  </div>
+</body>
+</html>

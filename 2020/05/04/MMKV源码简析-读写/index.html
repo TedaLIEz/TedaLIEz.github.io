@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+
+  
+  <title>MMKV源码简析---读写 | Aichi_B7A</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="MMKV 写 checkLoadData() appendDataWithKey   MMKV 读 小结 MMKV 空间优化  我们还是从 testcase 出发，一点点看 MMKV 如何实现读写的 MMKV 写123val mmkv &#x3D; MMKV.mmkvWithID(&quot;testKotlin&quot;)mmkv.encode(&quot;bool&quot;, true)mmkv.encode(&quot;int&quot;, Intege">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MMKV源码简析---读写">
+<meta property="og:url" content="https://tedaliez.github.io/2020/05/04/MMKV%E6%BA%90%E7%A0%81%E7%AE%80%E6%9E%90-%E8%AF%BB%E5%86%99/index.html">
+<meta property="og:site_name" content="Aichi_B7A">
+<meta property="og:description" content="MMKV 写 checkLoadData() appendDataWithKey   MMKV 读 小结 MMKV 空间优化  我们还是从 testcase 出发，一点点看 MMKV 如何实现读写的 MMKV 写123val mmkv &#x3D; MMKV.mmkvWithID(&quot;testKotlin&quot;)mmkv.encode(&quot;bool&quot;, true)mmkv.encode(&quot;int&quot;, Intege">
+<meta property="og:locale">
+<meta property="article:published_time" content="2020-05-04T07:22:29.000Z">
+<meta property="article:modified_time" content="2020-05-04T07:26:23.250Z">
+<meta property="article:author" content="Jian Guo">
+<meta property="article:tag" content="android, mmkv">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="/atom.xml" title="Aichi_B7A" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+<meta name="generator" content="Hexo 5.2.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Aichi_B7A</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="https://tedaliez.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-MMKV源码简析-读写" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2020/05/04/MMKV%E6%BA%90%E7%A0%81%E7%AE%80%E6%9E%90-%E8%AF%BB%E5%86%99/" class="article-date">
+  <time datetime="2020-05-04T07:22:29.000Z" itemprop="datePublished">2020-05-04</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      MMKV源码简析---读写
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <ul>
+<li><a href="#mmkv-%e5%86%99">MMKV 写</a><ul>
+<li><a href="#checkloaddata">checkLoadData()</a></li>
+<li><a href="#appenddatawithkey">appendDataWithKey</a></li>
+</ul>
+</li>
+<li><a href="#mmkv-%e8%af%bb">MMKV 读</a></li>
+<li><a href="#%e5%b0%8f%e7%bb%93">小结</a></li>
+<li><a href="#mmkv-%e7%a9%ba%e9%97%b4%e4%bc%98%e5%8c%96">MMKV 空间优化</a></li>
+</ul>
+<p>我们还是从 testcase 出发，一点点看 MMKV 如何实现读写的</p>
+<h2 id="MMKV-写"><a href="#MMKV-写" class="headerlink" title="MMKV 写"></a>MMKV 写</h2><figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">val</span> mmkv = MMKV.mmkvWithID(<span class="string">"testKotlin"</span>)</span><br><span class="line">mmkv.encode(<span class="string">"bool"</span>, <span class="literal">true</span>)</span><br><span class="line">mmkv.encode(<span class="string">"int"</span>, Integer.MIN_VALUE)</span><br></pre></td></tr></table></figure>
+<p>MMKV#encode 支持所有基本类型, 这里我们挑一个简单的 bool 类型分析一下，根据调用链<code>MMKV#encode</code>-&gt;<code>MMKV#encodeBool</code>来到 native-bridge.cpp 中的 JNI 接口，找到其实现<code>MMKV::set(bool value, MMKVKey_t key)</code></p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// MMKVKey_t = const string&amp;</span></span><br><span class="line"><span class="keyword">bool</span> MMKV::<span class="built_in">set</span>(<span class="keyword">bool</span> value, MMKVKey_t key) &#123;</span><br><span class="line">    <span class="keyword">if</span> (isKeyEmpty(key)) &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">size_t</span> size = pbBoolSize();</span><br><span class="line">    <span class="function">MMBuffer <span class="title">data</span><span class="params">(size)</span></span>;</span><br><span class="line">    <span class="function">CodedOutputData <span class="title">output</span><span class="params">(data.getPtr(), size)</span></span>;</span><br><span class="line">    output.writeBool(value);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> setDataForKey(<span class="built_in">std</span>::move(data), key);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里根据 pb 协议的规范，分配了一块和 pb 协议中商定的类型字段长度相同的 buffer MMBuffer, 将这个 buffer 利用 CodedOutputData 这个工具类写入一个 bool，之后调用<code>setDataForKey</code>来记录</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">bool</span> MMKV::setDataForKey(MMBuffer &amp;&amp;data, MMKVKey_t key) &#123;</span><br><span class="line">    <span class="keyword">if</span> (data.length() == <span class="number">0</span> || isKeyEmpty(key)) &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    SCOPED_LOCK(m_lock);</span><br><span class="line">    SCOPED_LOCK(m_exclusiveProcessLock);</span><br><span class="line">    checkLoadData(); <span class="comment">// #1</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">auto</span> ret = appendDataWithKey(data, key); <span class="comment">// #2</span></span><br><span class="line">    <span class="keyword">if</span> (ret) &#123;</span><br><span class="line">        m_dic[key] = <span class="built_in">std</span>::move(data);</span><br><span class="line">        m_hasFullWriteback = <span class="literal">false</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> ret;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="checkLoadData"><a href="#checkLoadData" class="headerlink" title="checkLoadData()"></a>checkLoadData()</h3><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">void</span> MMKV::checkLoadData() &#123;</span><br><span class="line">    <span class="keyword">if</span> (m_needLoadFromFile) &#123; <span class="comment">// m_needLoadFromFile在MMKV构造和clearMemoryCache调用后才会是true</span></span><br><span class="line">        SCOPED_LOCK(m_sharedProcessLock);</span><br><span class="line"></span><br><span class="line">        m_needLoadFromFile = <span class="literal">false</span>;</span><br><span class="line">        loadFromFile(); <span class="comment">// 初始化过程中也调用了这个函数，相当于加载存储中的内容</span></span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (!m_isInterProcess) &#123;</span><br><span class="line">        <span class="comment">// 不是跨进程模式的MMKV，直接返回</span></span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (!m_metaFile-&gt;isFileValid()) &#123;</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// <span class="doctag">TODO:</span> atomic lock m_metaFile?</span></span><br><span class="line">    MMKVMetaInfo metaInfo;</span><br><span class="line">    metaInfo.read(m_metaFile-&gt;getMemory());</span><br><span class="line">    <span class="keyword">if</span> (m_metaInfo-&gt;m_sequence != metaInfo.m_sequence) &#123; <span class="comment">// 内存中的seq和文件中的seq不一致，文件有新的改动，清理缓存，重新读文件，通知内容更改</span></span><br><span class="line">        MMKVInfo(<span class="string">"[%s] oldSeq %u, newSeq %u"</span>, m_mmapID.c_str(), m_metaInfo-&gt;m_sequence, metaInfo.m_sequence);</span><br><span class="line">        SCOPED_LOCK(m_sharedProcessLock);</span><br><span class="line"></span><br><span class="line">        clearMemoryCache();</span><br><span class="line">        loadFromFile();</span><br><span class="line">        notifyContentChanged();</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (m_metaInfo-&gt;m_crcDigest != metaInfo.m_crcDigest) &#123; <span class="comment">// 内存中的crc校验值和文件中crc校验值不一致</span></span><br><span class="line">        MMKVDebug(<span class="string">"[%s] oldCrc %u, newCrc %u, new actualSize %u"</span>, m_mmapID.c_str(), m_metaInfo-&gt;m_crcDigest,</span><br><span class="line">                  metaInfo.m_crcDigest, metaInfo.m_actualSize);</span><br><span class="line">        SCOPED_LOCK(m_sharedProcessLock);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">size_t</span> fileSize = m_file-&gt;getActualFileSize();</span><br><span class="line">        <span class="keyword">if</span> (m_file-&gt;getFileSize() != fileSize) &#123;</span><br><span class="line">            <span class="comment">// 有新内容写入，清理memory，重新读文件，通知内容更改</span></span><br><span class="line">            MMKVInfo(<span class="string">"file size has changed [%s] from %zu to %zu"</span>, m_mmapID.c_str(), m_file-&gt;getFileSize(), fileSize);</span><br><span class="line">            clearMemoryCache();</span><br><span class="line">            loadFromFile();</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="comment">// 现有内容有变化，存量加载</span></span><br><span class="line">            partialLoadFromFile();</span><br><span class="line">        &#125;</span><br><span class="line">        notifyContentChanged();  <span class="comment">// 通知Java层通过setWantsContentChangeNotify注册的回调</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>逻辑比较清晰，主要看看 partialLoadFromFile 这个函数</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// read from last m_position</span></span><br><span class="line"><span class="keyword">void</span> MMKV::partialLoadFromFile() &#123;</span><br><span class="line">    m_metaInfo-&gt;read(m_metaFile-&gt;getMemory());</span><br><span class="line"></span><br><span class="line">    <span class="keyword">size_t</span> oldActualSize = m_actualSize;</span><br><span class="line">    m_actualSize = readActualSize();</span><br><span class="line">    <span class="keyword">auto</span> fileSize = m_file-&gt;getFileSize();</span><br><span class="line">    MMKVDebug(<span class="string">"loading [%s] with file size %zu, oldActualSize %zu, newActualSize %zu"</span>, m_mmapID.c_str(), fileSize,</span><br><span class="line">              oldActualSize, m_actualSize);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (m_actualSize &gt; <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="keyword">if</span> (m_actualSize &lt; fileSize &amp;&amp; m_actualSize + Fixed32Size &lt;= fileSize) &#123;</span><br><span class="line">            <span class="keyword">if</span> (m_actualSize &gt; oldActualSize) &#123;</span><br><span class="line">                <span class="comment">// 有新内容</span></span><br><span class="line">                <span class="keyword">size_t</span> bufferSize = m_actualSize - oldActualSize;</span><br><span class="line">                <span class="keyword">auto</span> ptr = (<span class="keyword">uint8_t</span> *) m_file-&gt;getMemory();</span><br><span class="line">                <span class="function">MMBuffer <span class="title">inputBuffer</span><span class="params">(ptr + Fixed32Size + oldActualSize, bufferSize, MMBufferNoCopy)</span></span>;</span><br><span class="line">                <span class="comment">// incremental update crc digest</span></span><br><span class="line">                m_crcDigest =</span><br><span class="line">                    (<span class="keyword">uint32_t</span>) CRC32(m_crcDigest, (<span class="keyword">const</span> <span class="keyword">uint8_t</span> *) inputBuffer.getPtr(), inputBuffer.length());</span><br><span class="line">                <span class="keyword">if</span> (m_crcDigest == m_metaInfo-&gt;m_crcDigest) &#123;</span><br><span class="line">                    <span class="keyword">if</span> (m_crypter) &#123;</span><br><span class="line">                        decryptBuffer(*m_crypter, inputBuffer);</span><br><span class="line">                    &#125;</span><br><span class="line">                    MiniPBCoder::greedyDecodeMap(m_dic, inputBuffer, bufferSize); <span class="comment">// 解析buffer内容到m_dic, buffer的结构是线性的string-MMBuffer KV结构</span></span><br><span class="line">                    m_output-&gt;seek(bufferSize);</span><br><span class="line">                    m_hasFullWriteback = <span class="literal">false</span>;</span><br><span class="line"></span><br><span class="line">                    MMKVDebug(<span class="string">"partial loaded [%s] with %zu values"</span>, m_mmapID.c_str(), m_dic.size());</span><br><span class="line">                    <span class="keyword">return</span>;</span><br><span class="line">                &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                    MMKVError(<span class="string">"m_crcDigest[%u] != m_metaInfo-&gt;m_crcDigest[%u]"</span>, m_crcDigest, m_metaInfo-&gt;m_crcDigest);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// something is wrong, do a full load</span></span><br><span class="line">    clearMemoryCache();</span><br><span class="line">    loadFromFile();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="appendDataWithKey"><a href="#appendDataWithKey" class="headerlink" title="appendDataWithKey"></a>appendDataWithKey</h3><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">bool</span> MMKV::appendDataWithKey(<span class="keyword">const</span> MMBuffer &amp;data, MMKVKey_t key) &#123;</span><br><span class="line">    <span class="keyword">size_t</span> keyLength = key.length();</span><br><span class="line">    <span class="comment">// size needed to encode the key</span></span><br><span class="line">    <span class="keyword">size_t</span> size = keyLength + pbRawVarint32Size((<span class="keyword">int32_t</span>) keyLength);</span><br><span class="line">    <span class="comment">// size needed to encode the value</span></span><br><span class="line">    size += data.length() + pbRawVarint32Size((<span class="keyword">int32_t</span>) data.length());</span><br><span class="line"></span><br><span class="line">    SCOPED_LOCK(m_exclusiveProcessLock);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">bool</span> hasEnoughSize = ensureMemorySize(size);</span><br><span class="line">    <span class="keyword">if</span> (!hasEnoughSize || !isFileValid()) &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    m_output-&gt;writeString(key);</span><br><span class="line">    m_output-&gt;writeData(data); <span class="comment">// note: write size of data</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">auto</span> ptr = (<span class="keyword">uint8_t</span> *) m_file-&gt;getMemory() + Fixed32Size + m_actualSize;</span><br><span class="line">    <span class="keyword">if</span> (m_crypter) &#123;</span><br><span class="line">        m_crypter-&gt;encrypt(ptr, ptr, size);</span><br><span class="line">    &#125;</span><br><span class="line">    m_actualSize += size;</span><br><span class="line">    updateCRCDigest(ptr, size); <span class="comment">// 更新crc校验和seq</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="MMKV-读"><a href="#MMKV-读" class="headerlink" title="MMKV 读"></a>MMKV 读</h2><p>同样地，通过 JNI 找到<code>MMKV::getBool</code></p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">bool</span> MMKV::getBool(MMKVKey_t key, <span class="keyword">bool</span> defaultValue) &#123;</span><br><span class="line">    <span class="keyword">if</span> (isKeyEmpty(key)) &#123;</span><br><span class="line">        <span class="keyword">return</span> defaultValue;</span><br><span class="line">    &#125;</span><br><span class="line">    SCOPED_LOCK(m_lock);</span><br><span class="line">    <span class="keyword">auto</span> &amp;data = getDataForKey(key); <span class="comment">// #1</span></span><br><span class="line">    <span class="keyword">if</span> (data.length() &gt; <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="function">CodedInputData <span class="title">input</span><span class="params">(data.getPtr(), data.length())</span></span>;</span><br><span class="line">            <span class="keyword">return</span> input.readBool();</span><br><span class="line">        &#125; <span class="keyword">catch</span> (<span class="built_in">std</span>::exception &amp;exception) &#123;</span><br><span class="line">            MMKVError(<span class="string">"%s"</span>, exception.what());</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> defaultValue;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>实现关键在 getDataForKey</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> MMBuffer &amp;MMKV::getDataForKey(MMKVKey_t key) &#123;</span><br><span class="line">    checkLoadData();</span><br><span class="line">    <span class="keyword">auto</span> itr = m_dic.find(key);</span><br><span class="line">    <span class="keyword">if</span> (itr != m_dic.end()) &#123;</span><br><span class="line">        <span class="keyword">return</span> itr-&gt;second;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">static</span> MMBuffer nan;</span><br><span class="line">    <span class="keyword">return</span> nan;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>checkLoadData 函数通过调用 loadFromFile 会确保所有的文件数据被读进 m_dic 中，这里直接取就可以了</p>
+<h2 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h2><p>MMKV 的读写逻辑比较简单，主要的实现还是依赖了 PB 方式的数据序列化和反序列化，根据代码逻辑，我们可以尝试还原出 MMKV 内部的存储结构如下:</p>
+<figure class="highlight plain"><figcaption><span>buffer</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">message KV &#123;</span><br><span class="line">	string key = 1;</span><br><span class="line">	buffer value = 2;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">message MMKV &#123;</span><br><span class="line">    int32 size = 1; // 文件大小，用于校验新数据写入</span><br><span class="line">    repeated KV kv = 2;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>同时我们可以通过<code>MiniPBCoder::decodeOneMap</code>的代码实现可以发现，MMKV 对于新旧数据问题，采用的方式不是写覆盖，而是直接追加，同时读时以最后一次写为最新值。这种方式显然是会带来大量的 key 字段冗余，因此必然存在一套完整的空间优化</p>
+<h2 id="MMKV-空间优化"><a href="#MMKV-空间优化" class="headerlink" title="MMKV 空间优化"></a>MMKV 空间优化</h2><p>核心实现在<code>MMKV::ensureMemorySize</code>中</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">bool</span> MMKV::ensureMemorySize(<span class="keyword">size_t</span> newSize) &#123;</span><br><span class="line">    <span class="keyword">if</span> (!isFileValid()) &#123;</span><br><span class="line">        MMKVWarning(<span class="string">"[%s] file not valid"</span>, m_mmapID.c_str());</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// make some room for placeholder</span></span><br><span class="line">    <span class="keyword">constexpr</span> <span class="keyword">size_t</span> ItemSizeHolderSize = <span class="number">4</span>;</span><br><span class="line">    <span class="keyword">if</span> (m_dic.empty()) &#123;</span><br><span class="line">        newSize += ItemSizeHolderSize;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (newSize &gt;= m_output-&gt;spaceLeft() || m_dic.empty()) &#123;</span><br><span class="line">        <span class="comment">// 空间不够，进行一次全量写入，这次全量写入会把过长的冗余字段全部覆盖写</span></span><br><span class="line">        <span class="comment">// try a full rewrite to make space</span></span><br><span class="line">        <span class="keyword">auto</span> fileSize = m_file-&gt;getFileSize();</span><br><span class="line">        MMBuffer data = MiniPBCoder::encodeDataWithObject(m_dic);</span><br><span class="line">        <span class="keyword">size_t</span> lenNeeded = data.length() + Fixed32Size + newSize;</span><br><span class="line">        <span class="keyword">size_t</span> avgItemSize = lenNeeded / <span class="built_in">std</span>::max&lt;<span class="keyword">size_t</span>&gt;(<span class="number">1</span>, m_dic.size());</span><br><span class="line">        <span class="keyword">size_t</span> futureUsage = avgItemSize * <span class="built_in">std</span>::max&lt;<span class="keyword">size_t</span>&gt;(<span class="number">8</span>, (m_dic.size() + <span class="number">1</span>) / <span class="number">2</span>);</span><br><span class="line">        <span class="comment">// 1. no space for a full rewrite, double it</span></span><br><span class="line">        <span class="comment">// 2. or space is not large enough for future usage, double it to avoid frequently full rewrite</span></span><br><span class="line">        <span class="keyword">if</span> (lenNeeded &gt;= fileSize || (lenNeeded + futureUsage) &gt;= fileSize) &#123;</span><br><span class="line">            <span class="keyword">size_t</span> oldSize = fileSize;</span><br><span class="line">            <span class="keyword">do</span> &#123;</span><br><span class="line">                fileSize *= <span class="number">2</span>; <span class="comment">// 2倍的扩充策略</span></span><br><span class="line">            &#125; <span class="keyword">while</span> (lenNeeded + futureUsage &gt;= fileSize);</span><br><span class="line">            MMKVInfo(<span class="string">"extending [%s] file size from %zu to %zu, incoming size:%zu, future usage:%zu"</span>, m_mmapID.c_str(),</span><br><span class="line">                     oldSize, fileSize, newSize, futureUsage);</span><br><span class="line"></span><br><span class="line">            <span class="comment">// if we can't extend size, rollback to old state</span></span><br><span class="line">            <span class="keyword">if</span> (!m_file-&gt;truncate(fileSize)) &#123;</span><br><span class="line">                <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="comment">// check if we fail to make more space</span></span><br><span class="line">            <span class="keyword">if</span> (!isFileValid()) &#123;</span><br><span class="line">                MMKVWarning(<span class="string">"[%s] file not valid"</span>, m_mmapID.c_str());</span><br><span class="line">                <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> doFullWriteBack(<span class="built_in">std</span>::move(data)); <span class="comment">// 全量写入</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>整个读写过程分析到这里，后面将分析一下 MMKV 对于跨进程存储的实现</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://tedaliez.github.io/2020/05/04/MMKV%E6%BA%90%E7%A0%81%E7%AE%80%E6%9E%90-%E8%AF%BB%E5%86%99/" data-id="ckgx4rr7m000ri8x7sz8yh2kj" class="article-share-link">Share</a>
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/android-mmkv/" rel="tag">android, mmkv</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2020/05/04/MMKV%E6%BA%90%E7%A0%81%E7%AE%80%E6%9E%90-%E8%B7%A8%E8%BF%9B%E7%A8%8B/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          MMKV源码简析---跨进程
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2020/05/04/MMKV%E6%BA%90%E7%A0%81%E7%AE%80%E6%9E%90-%E5%88%9D%E5%A7%8B%E5%8C%96/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">MMKV源码简析---初始化</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/Android-ROOM/" rel="tag">Android, ROOM</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/NDK/" rel="tag">NDK</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/TypeScript/" rel="tag">TypeScript</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/WebAssembly/" rel="tag">WebAssembly</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/WebView-JSBridge/" rel="tag">WebView, JSBridge</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/android/" rel="tag">android</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/android-jetpack-compose/" rel="tag">android, jetpack compose</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/android-mmkv/" rel="tag">android, mmkv</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/android-textview/" rel="tag">android, textview</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/kotlin/" rel="tag">kotlin</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/kotlin-coroutine/" rel="tag">kotlin, coroutine</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/kotlin-%E5%8D%8F%E7%A8%8B/" rel="tag">kotlin, 协程</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/v8-WebAssembly/" rel="tag">v8, WebAssembly</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/Android-ROOM/" style="font-size: 10px;">Android, ROOM</a> <a href="/tags/NDK/" style="font-size: 10px;">NDK</a> <a href="/tags/TypeScript/" style="font-size: 10px;">TypeScript</a> <a href="/tags/WebAssembly/" style="font-size: 15px;">WebAssembly</a> <a href="/tags/WebView-JSBridge/" style="font-size: 10px;">WebView, JSBridge</a> <a href="/tags/android/" style="font-size: 15px;">android</a> <a href="/tags/android-jetpack-compose/" style="font-size: 10px;">android, jetpack compose</a> <a href="/tags/android-mmkv/" style="font-size: 20px;">android, mmkv</a> <a href="/tags/android-textview/" style="font-size: 10px;">android, textview</a> <a href="/tags/kotlin/" style="font-size: 10px;">kotlin</a> <a href="/tags/kotlin-coroutine/" style="font-size: 10px;">kotlin, coroutine</a> <a href="/tags/kotlin-%E5%8D%8F%E7%A8%8B/" style="font-size: 10px;">kotlin, 协程</a> <a href="/tags/v8-WebAssembly/" style="font-size: 10px;">v8, WebAssembly</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/09/">September 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/08/">August 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/07/">July 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/05/">May 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/03/">March 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/02/">February 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/01/">January 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/12/">December 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/11/">November 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/09/">September 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/07/">July 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/06/">June 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/05/">May 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/03/">March 2019</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2020/09/13/FFMpeg-Android%E5%BC%80%E5%8F%91-%E7%AE%80%E5%8D%95%E9%9F%B3%E8%A7%86%E9%A2%91%E5%90%8C%E6%AD%A5/">FFMpeg-Android开发-简单音视频同步</a>
+          </li>
+        
+          <li>
+            <a href="/2020/09/12/Kotlin%E5%8D%8F%E7%A8%8B%E5%BC%82%E5%B8%B8%E5%A4%84%E7%90%86/">Kotlin协程异常处理</a>
+          </li>
+        
+          <li>
+            <a href="/2020/08/29/FFMpeg-Android%E5%BC%80%E5%8F%91-%E7%AE%80%E5%8D%95%E6%92%AD%E6%94%BE%E9%9F%B3%E9%A2%91/">FFMpeg-Android开发-简单播放音频</a>
+          </li>
+        
+          <li>
+            <a href="/2020/08/23/FFMpeg-Android%E5%BC%80%E5%8F%91-%E7%AE%80%E5%8D%95%E6%92%AD%E6%94%BE%E8%A7%86%E9%A2%91/">FFMpeg-Android开发-简单播放视频</a>
+          </li>
+        
+          <li>
+            <a href="/2020/08/22/FFMpeg-Android%E5%BC%80%E5%8F%91-%E8%A7%A3%E6%9E%90%E8%A7%86%E9%A2%91%E6%A0%BC%E5%BC%8F/">FFMpeg-Android开发-解析视频格式</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2020 Jian Guo<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+  </div>
+</body>
+</html>

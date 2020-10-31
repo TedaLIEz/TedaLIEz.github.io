@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+
+  
+  <title>Kotlin协程浅析 | Aichi_B7A</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="本文主要参考 KotlinConf 2017 内容来对 Kotlin 中协程的实现进行解析 TL;DR; Kotlin的协程本质上仍旧是Callback式的调用, 但采用了CPS的编程范式，使得我们的代码显得线性 这里略过对协程的定义，首先我们需要解释 CPS 是什么东西 CPS()CPS 实际上是一种编程风格，根据 wiki 定义 In functional programming, conti">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Kotlin协程浅析">
+<meta property="og:url" content="https://tedaliez.github.io/2020/01/05/Kotlin%E5%8D%8F%E7%A8%8B%E6%B5%85%E6%9E%90/index.html">
+<meta property="og:site_name" content="Aichi_B7A">
+<meta property="og:description" content="本文主要参考 KotlinConf 2017 内容来对 Kotlin 中协程的实现进行解析 TL;DR; Kotlin的协程本质上仍旧是Callback式的调用, 但采用了CPS的编程范式，使得我们的代码显得线性 这里略过对协程的定义，首先我们需要解释 CPS 是什么东西 CPS()CPS 实际上是一种编程风格，根据 wiki 定义 In functional programming, conti">
+<meta property="og:locale">
+<meta property="article:published_time" content="2020-01-05T11:00:55.000Z">
+<meta property="article:modified_time" content="2020-01-05T11:01:18.875Z">
+<meta property="article:author" content="Jian Guo">
+<meta property="article:tag" content="kotlin, coroutine">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="/atom.xml" title="Aichi_B7A" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+<meta name="generator" content="Hexo 5.2.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Aichi_B7A</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="https://tedaliez.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-Kotlin协程浅析" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2020/01/05/Kotlin%E5%8D%8F%E7%A8%8B%E6%B5%85%E6%9E%90/" class="article-date">
+  <time datetime="2020-01-05T11:00:55.000Z" itemprop="datePublished">2020-01-05</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      Kotlin协程浅析
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>本文主要参考 KotlinConf 2017 内容来对 Kotlin 中协程的实现进行解析</p>
+<p>TL;DR;</p>
+<pre><code>Kotlin的协程本质上仍旧是Callback式的调用, 但采用了CPS的编程范式，使得我们的代码显得线性
+</code></pre><p>这里略过对协程的定义，首先我们需要解释 CPS 是什么东西</p>
+<h2 id="CPS"><a href="#CPS" class="headerlink" title="CPS()"></a>CPS()</h2><p>CPS 实际上是一种编程风格，根据 wiki 定义</p>
+<pre><code>In functional programming, continuation-passing style (CPS) is a style of programming in which control is passed explicitly in the form of a continuation. (from Wikipedia.)
+</code></pre><p>举个简单的例子，如果我们定义一类型的函数，这些函数都以 async 开头，并且在函数参数中都带有一个 callback 函数参数，每个函数在执行自己的逻辑完成后，都通过 callback 来处理结果</p>
+<figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">fun</span> <span class="title">asyncDoSomething</span><span class="params">(param1: <span class="type">Int</span>, param2: <span class="type">Any</span>, callback: (<span class="type">Any</span>?)</span></span> -&gt; <span class="built_in">Unit</span>) &#123;</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">    <span class="comment">// when execution is done</span></span><br><span class="line">    callback.invoke(result)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这种类型的函数中，callback 往往被称作 continuation，因为实际上它表达的是下一个函数执行的逻辑，即这个回调函数决定了程序接下来的行为</p>
+<p>上述这种方式就是一种标准的 CPS 实现方式</p>
+<p>举一个现实例子来说，例如:</p>
+<figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">fun</span> <span class="title">postItem</span><span class="params">(item: <span class="type">Item</span>)</span></span> &#123;</span><br><span class="line">    <span class="keyword">val</span> token = requestToken()</span><br><span class="line">    <span class="keyword">val</span> post = createPost(token, item)</span><br><span class="line">    processPost(post)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里你有一个过程需要三个子过程来完成</p>
+<p>对于 requestToken()函数来说，createPost 和 processPost 是其过程的 continuation</p>
+<p>那么我们可以尝试把 postItem 这个过程转换为一个 CPS 式的编码范式</p>
+<figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">fun</span> <span class="title">postItem</span><span class="params">(item: <span class="type">Item</span>)</span></span> &#123;</span><br><span class="line">    requestToken &#123; token -&gt;</span><br><span class="line">        createPost(token, item) &#123; post -&gt;</span><br><span class="line">            processPost(post)</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这种写法看上去还算 OK，但是也有很多问题，例如:</p>
+<ol>
+<li>Callback Hell</li>
+<li>过分多的回调，会带来非常大的调用栈开销</li>
+</ol>
+<p>那么 Kotlin 是如何实现 CPS 的呢？</p>
+<h2 id="Kotlin-对-CPS-的实现"><a href="#Kotlin-对-CPS-的实现" class="headerlink" title="Kotlin 对 CPS 的实现"></a>Kotlin 对 CPS 的实现</h2><p>Kotlin 对 CPS 风格的实现，实际上就是解决了 Kotlin 对协程的支持</p>
+<figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">suspend</span> <span class="function"><span class="keyword">fun</span> <span class="title">createPost</span><span class="params">(token: <span class="type">Token</span>, item: <span class="type">Item</span>)</span></span> : Post &#123; ... &#125;</span><br></pre></td></tr></table></figure>
+<p>实际上会转换为:</p>
+<figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">Object createPost(Token token, Item item, Continuation&lt;Post&gt; cont) &#123; … &#125;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">interface</span> <span class="title">Continuation</span>&lt;<span class="type">in T</span>&gt; </span>&#123;</span><br><span class="line">    <span class="keyword">val</span> context: CoroutineContext</span><br><span class="line">    <span class="function"><span class="keyword">fun</span> <span class="title">resume</span><span class="params">(value: <span class="type">T</span>)</span></span></span><br><span class="line">    <span class="function"><span class="keyword">fun</span> <span class="title">resumeWithException</span><span class="params">(exception: <span class="type">Throwable</span>)</span></span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>可以很明显的发现 kotlin 的 Continuation 对象就是一个典型的 Callback</p>
+<p>接下来我们来看看 Kotlin 对协程的实现方式</p>
+<h2 id="Kotlin-对协程的实现"><a href="#Kotlin-对协程的实现" class="headerlink" title="Kotlin 对协程的实现"></a>Kotlin 对协程的实现</h2><figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">suspend</span> <span class="function"><span class="keyword">fun</span> <span class="title">postItem</span><span class="params">(item: <span class="type">Item</span>)</span></span> &#123;</span><br><span class="line">    <span class="keyword">val</span> token = requestToken()</span><br><span class="line">    <span class="keyword">val</span> post = createPost(token, item)</span><br><span class="line">    processPost(post)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>上面是一段典型的 kotlin 协程代码，根据之前的讨论，对于协程，我们有一种典型的实现:</p>
+<figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">fun</span> <span class="title">postItem</span><span class="params">(item: <span class="type">Item</span>)</span></span> &#123;</span><br><span class="line">    requestToken &#123; token -&gt;</span><br><span class="line">        createPost(token, item) &#123; post -&gt;</span><br><span class="line">            processPost(post)</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这种实现被认为存在回调地狱和栈开销的问题，接下来我们看看 kotlin 是如何解决的</p>
+<figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">fun</span> <span class="title">postItem</span><span class="params">(item: <span class="type">Item</span>, cont: <span class="type">Continuation</span>)</span></span> &#123;</span><br><span class="line">    <span class="keyword">val</span> sm =  cont <span class="keyword">as</span>? ThisSM ?: <span class="keyword">object</span> : ThisSM &#123;</span><br><span class="line">        <span class="function"><span class="keyword">fun</span> <span class="title">resume</span><span class="params">(…)</span></span> &#123;</span><br><span class="line">            postItem(<span class="literal">null</span>, <span class="keyword">this</span>)</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    switch (sm.label) &#123;</span><br><span class="line">        case <span class="number">0</span>:</span><br><span class="line">            sm.item = item</span><br><span class="line">            sm.label = <span class="number">1</span></span><br><span class="line">            requestToken(sm)</span><br><span class="line">        case <span class="number">1</span>:</span><br><span class="line">            <span class="keyword">val</span> item = sm.item</span><br><span class="line">            <span class="keyword">val</span> token = sm.result <span class="keyword">as</span> Token</span><br><span class="line">            sm.label = <span class="number">2</span></span><br><span class="line">            createPost(token, item, sm)</span><br><span class="line">        …</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>可以看到，这里 kotlin 实际上是利用状态机来实现 CPS 风格的，对于每一个 suspend point，都有一个唯一的状态值对应，状态机根据不同的状态，执行不同的过程</p>
+<p>总结一下:</p>
+<ol>
+<li>一个 suspend 函数定义了一个状态机</li>
+<li>一个协程就是一个状态机的实例，这个实例就是将其调用的 suspend 函数组合在了一起</li>
+</ol>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://tedaliez.github.io/2020/01/05/Kotlin%E5%8D%8F%E7%A8%8B%E6%B5%85%E6%9E%90/" data-id="ckgx4rr7j000ni8x7rp8elmhm" class="article-share-link">Share</a>
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/kotlin-coroutine/" rel="tag">kotlin, coroutine</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2020/01/12/Android-TextView%E7%BB%98%E5%88%B6%E6%8A%80%E5%B7%A7/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          Android TextView绘制技巧
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2019/12/21/JSBridge%E8%A7%A3%E6%9E%90/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">JSBridge解析</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/Android-ROOM/" rel="tag">Android, ROOM</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/NDK/" rel="tag">NDK</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/TypeScript/" rel="tag">TypeScript</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/WebAssembly/" rel="tag">WebAssembly</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/WebView-JSBridge/" rel="tag">WebView, JSBridge</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/android/" rel="tag">android</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/android-jetpack-compose/" rel="tag">android, jetpack compose</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/android-mmkv/" rel="tag">android, mmkv</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/android-textview/" rel="tag">android, textview</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/kotlin/" rel="tag">kotlin</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/kotlin-coroutine/" rel="tag">kotlin, coroutine</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/kotlin-%E5%8D%8F%E7%A8%8B/" rel="tag">kotlin, 协程</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/v8-WebAssembly/" rel="tag">v8, WebAssembly</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/Android-ROOM/" style="font-size: 10px;">Android, ROOM</a> <a href="/tags/NDK/" style="font-size: 10px;">NDK</a> <a href="/tags/TypeScript/" style="font-size: 10px;">TypeScript</a> <a href="/tags/WebAssembly/" style="font-size: 15px;">WebAssembly</a> <a href="/tags/WebView-JSBridge/" style="font-size: 10px;">WebView, JSBridge</a> <a href="/tags/android/" style="font-size: 15px;">android</a> <a href="/tags/android-jetpack-compose/" style="font-size: 10px;">android, jetpack compose</a> <a href="/tags/android-mmkv/" style="font-size: 20px;">android, mmkv</a> <a href="/tags/android-textview/" style="font-size: 10px;">android, textview</a> <a href="/tags/kotlin/" style="font-size: 10px;">kotlin</a> <a href="/tags/kotlin-coroutine/" style="font-size: 10px;">kotlin, coroutine</a> <a href="/tags/kotlin-%E5%8D%8F%E7%A8%8B/" style="font-size: 10px;">kotlin, 协程</a> <a href="/tags/v8-WebAssembly/" style="font-size: 10px;">v8, WebAssembly</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/09/">September 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/08/">August 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/07/">July 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/05/">May 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/03/">March 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/02/">February 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/01/">January 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/12/">December 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/11/">November 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/09/">September 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/07/">July 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/06/">June 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/05/">May 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/03/">March 2019</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2020/09/13/FFMpeg-Android%E5%BC%80%E5%8F%91-%E7%AE%80%E5%8D%95%E9%9F%B3%E8%A7%86%E9%A2%91%E5%90%8C%E6%AD%A5/">FFMpeg-Android开发-简单音视频同步</a>
+          </li>
+        
+          <li>
+            <a href="/2020/09/12/Kotlin%E5%8D%8F%E7%A8%8B%E5%BC%82%E5%B8%B8%E5%A4%84%E7%90%86/">Kotlin协程异常处理</a>
+          </li>
+        
+          <li>
+            <a href="/2020/08/29/FFMpeg-Android%E5%BC%80%E5%8F%91-%E7%AE%80%E5%8D%95%E6%92%AD%E6%94%BE%E9%9F%B3%E9%A2%91/">FFMpeg-Android开发-简单播放音频</a>
+          </li>
+        
+          <li>
+            <a href="/2020/08/23/FFMpeg-Android%E5%BC%80%E5%8F%91-%E7%AE%80%E5%8D%95%E6%92%AD%E6%94%BE%E8%A7%86%E9%A2%91/">FFMpeg-Android开发-简单播放视频</a>
+          </li>
+        
+          <li>
+            <a href="/2020/08/22/FFMpeg-Android%E5%BC%80%E5%8F%91-%E8%A7%A3%E6%9E%90%E8%A7%86%E9%A2%91%E6%A0%BC%E5%BC%8F/">FFMpeg-Android开发-解析视频格式</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2020 Jian Guo<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+  </div>
+</body>
+</html>

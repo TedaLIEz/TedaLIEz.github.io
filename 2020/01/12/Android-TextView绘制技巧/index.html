@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+
+  
+  <title>Android TextView绘制技巧 | Aichi_B7A</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="文本绘制概念 Top - The maximum distance above the baseline for the tallest glyph in the font at a given text size. Ascent - The recommended distance above the baseline for singled spaced text. Descent - The">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Android TextView绘制技巧">
+<meta property="og:url" content="https://tedaliez.github.io/2020/01/12/Android-TextView%E7%BB%98%E5%88%B6%E6%8A%80%E5%B7%A7/index.html">
+<meta property="og:site_name" content="Aichi_B7A">
+<meta property="og:description" content="文本绘制概念 Top - The maximum distance above the baseline for the tallest glyph in the font at a given text size. Ascent - The recommended distance above the baseline for singled spaced text. Descent - The">
+<meta property="og:locale">
+<meta property="og:image" content="https://tedaliez.github.io/2020/01/12/Android-TextView绘制技巧/android_textview.png">
+<meta property="article:published_time" content="2020-01-12T01:22:37.000Z">
+<meta property="article:modified_time" content="2020-01-12T01:23:39.125Z">
+<meta property="article:author" content="Jian Guo">
+<meta property="article:tag" content="android, textview">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://tedaliez.github.io/2020/01/12/Android-TextView绘制技巧/android_textview.png">
+  
+    <link rel="alternate" href="/atom.xml" title="Aichi_B7A" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+<meta name="generator" content="Hexo 5.2.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Aichi_B7A</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="https://tedaliez.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-Android-TextView绘制技巧" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2020/01/12/Android-TextView%E7%BB%98%E5%88%B6%E6%8A%80%E5%B7%A7/" class="article-date">
+  <time datetime="2020-01-12T01:22:37.000Z" itemprop="datePublished">2020-01-12</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      Android TextView绘制技巧
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h2 id="文本绘制概念"><a href="#文本绘制概念" class="headerlink" title="文本绘制概念"></a>文本绘制概念</h2><ul>
+<li>Top - The maximum distance above the baseline for the tallest glyph in the font at a given text size.</li>
+<li>Ascent - The recommended distance above the baseline for singled spaced text.</li>
+<li>Descent - The recommended distance below the baseline for singled spaced text.</li>
+<li>Bottom - The maximum distance below the baseline for the lowest glyph in the font at a given text size.</li>
+<li>Leading - The recommended additional space to add between lines of text.</li>
+</ul>
+<img src="/2020/01/12/Android-TextView绘制技巧/android_textview.png">
+<p>这套概念在<code>android.text.Layout</code>中也成立</p>
+<p>需要注意的是 android.text.Layout 也是从 0 计算的, 对于其 API getLineBottom, getLineBaseline, getLineTop…. 都是从 0 计算的</p>
+<p>同时, android.text.TextView#getLayout()方法必定在 measure 过程结束后才能非空</p>
+<h2 id="TextView-Layout-奇招"><a href="#TextView-Layout-奇招" class="headerlink" title="TextView#Layout 奇招"></a>TextView#Layout 奇招</h2><p>TextView 的 Layout 属性管理了文本的布局展示，同时也提供了两个能力，</p>
+<p>获取省略号在当前行的开始位置；<br>获取当前行内被省略文字的长度。</p>
+<pre><code>/** * Return the offset of the first character to be ellipsized away, * relative to the start of the line. (So 0 if the beginning of the * line is ellipsized, not getLineStart().) */
+public abstract int getEllipsisStart(int line);
+
+/** * Returns the number of characters to be ellipsized away, or 0 if * no ellipsis is to take place. */
+public abstract int getEllipsisCount(int line);
+</code></pre><p>有了以上能力，针对上文最后提到的问题马上便会有思路：通过精确计算被省略的文字位置，截取字符串重新插入占位标识符，然后实现在省略号处添加图片</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">String text = guessLikeBean.getTitle()+<span class="string">"(精)"</span>;</span><br><span class="line">mTvTitle.setText(text);</span><br><span class="line"><span class="keyword">int</span> ellipsisCount = mTvTitle.getLayout().getEllipsisCount(mTvTitle.getLineCount() - <span class="number">1</span>);</span><br><span class="line"><span class="keyword">if</span> (ellipsisCount &gt; <span class="number">0</span>) &#123;</span><br><span class="line">    text = text.substring(<span class="number">0</span>, text.length() - ellipsisCount - <span class="number">1</span>) + <span class="string">"…(精)"</span>;</span><br><span class="line">&#125;</span><br><span class="line">SpannableString imageString = <span class="keyword">new</span> SpannableString(text);</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+<p>同时，为了保证 TextView#getLayout 一定有值，我们可以使用 View#post 函数来调用我们的函数，View#post 会确保 View 在 attach 之后再执行，而 attach 一定保证了 layout 过程先执行</p>
+<p>实际上 TextView#Layout 中可以找到很多跟文本相关的属性，在排版的过程中或多或少你会用到，因此遇到文本排版问题时，不妨先试试这个, 例如:</p>
+<p>Layout 的一个子类<code>BoringLayout</code>,有一个静态方法<code>isBoring()</code>,可以用来判断一段文字是否能在一行放下，这个方法就有广泛的应用场景</p>
+<h2 id="如何绘制居中的图标"><a href="#如何绘制居中的图标" class="headerlink" title="如何绘制居中的图标"></a>如何绘制居中的图标</h2><p>参考<a href="https://gist.github.com/TedaLIEz/97f03a2cb842621f022bd27ba1dfd020" target="_blank" rel="noopener">https://gist.github.com/TedaLIEz/97f03a2cb842621f022bd27ba1dfd020</a></p>
+<h2 id="如何判断文字能否塞得下一行"><a href="#如何判断文字能否塞得下一行" class="headerlink" title="如何判断文字能否塞得下一行"></a>如何判断文字能否塞得下一行</h2><figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * titleTxt: 文本</span></span><br><span class="line"><span class="comment"> * layout: TextView#Layout</span></span><br><span class="line"><span class="comment"> * title: TextView</span></span><br><span class="line"><span class="comment"> * maxWidth: 期望的view最大宽度</span></span><br><span class="line"><span class="comment"> * spacing: 期望能够剩余出来的宽度, 即文本的最大宽度为maxWidth - spacing</span></span><br><span class="line"><span class="comment">**/</span></span><br><span class="line"><span class="keyword">private</span> <span class="function"><span class="keyword">fun</span> <span class="title">badgeHelper</span><span class="params">(titleTxt: <span class="type">String</span>, layout: <span class="type">Layout</span>, title: <span class="type">TextView</span>, maxWidth: <span class="type">Int</span>, spacing: <span class="type">Int</span>)</span></span> : String &#123;</span><br><span class="line">    <span class="keyword">var</span> txt = titleTxt + <span class="string">"精精精"</span></span><br><span class="line">    <span class="keyword">val</span> lineCount = layout.lineCount</span><br><span class="line">    <span class="keyword">if</span> (lineCount == <span class="number">1</span>) &#123;</span><br><span class="line">        Log.d(TAG, <span class="string">"we have only one line text <span class="variable">$titleTxt</span>, return"</span>)</span><br><span class="line">        <span class="keyword">return</span> txt</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">val</span> dWidth = spacing</span><br><span class="line">    <span class="keyword">val</span> lastLineStart = layout.getLineStart(lineCount - <span class="number">1</span>)</span><br><span class="line">    <span class="keyword">val</span> lastLineStr = txt.replace(<span class="string">'.'</span>, <span class="string">'x'</span>).substring(lastLineStart)</span><br><span class="line">    <span class="keyword">val</span> boring = BoringLayout.isBoring(lastLineStr, title.paint)</span><br><span class="line">    <span class="keyword">if</span> (boring != <span class="literal">null</span>) &#123;</span><br><span class="line">        <span class="keyword">val</span> sW = ScreenUtil.getScreenWidth(title.context)</span><br><span class="line">        <span class="keyword">val</span> px = maxWidth</span><br><span class="line">        <span class="keyword">val</span> width = boring.width</span><br><span class="line">        <span class="keyword">if</span> (sW &lt; px + width) &#123;</span><br><span class="line">            <span class="comment">// text ellipsize</span></span><br><span class="line">            Log.w(TAG, <span class="string">"BoringLayout says it will ellipsize, skip some text now"</span>)</span><br><span class="line">            <span class="keyword">val</span> diff = px + width - sW</span><br><span class="line">            <span class="keyword">val</span> diffSize = ((diff + dWidth) / title.textSize).roundToInt()</span><br><span class="line">            txt = titleTxt.substring(<span class="number">0</span>, titleTxt.length - diffSize) + title.context.getString(R.string.ellipsize_string) + <span class="string">"(精)"</span></span><br><span class="line">            Log.d(TAG, <span class="string">"we change txt from <span class="variable">$titleTxt</span> to <span class="variable">$txt</span>"</span>)</span><br><span class="line">            <span class="keyword">return</span> txt</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">val</span> size = (dWidth / title.textSize).roundToInt()</span><br><span class="line">    <span class="keyword">val</span> seq = TextUtils.ellipsize(lastLineStr, title.paint, (title.width - title.paddingRight - title.paddingLeft).toFloat(), TextUtils.TruncateAt.END)</span><br><span class="line">    <span class="keyword">val</span> lastIndexOfDot = seq.lastIndexOf(title.context.getString(R.string.ellipsize_string))</span><br><span class="line">    <span class="keyword">if</span> (lastIndexOfDot != -<span class="number">1</span> &amp;&amp; lastLineStart + lastIndexOfDot - size - <span class="number">3</span> &gt; <span class="number">0</span>) &#123;</span><br><span class="line">        Log.w(TAG, <span class="string">"TextUtils says it will ellipsize, skip some text now"</span>)</span><br><span class="line">        txt = titleTxt.substring(<span class="number">0</span>, lastLineStart + lastIndexOfDot - size - <span class="number">3</span>) + title.context.getString(R.string.ellipsize_string) + <span class="string">"(精)"</span></span><br><span class="line">        Log.d(TAG, <span class="string">"we change txt from <span class="variable">$titleTxt</span> to <span class="variable">$txt</span>"</span>)</span><br><span class="line">        <span class="keyword">return</span> txt</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">val</span> ellipsisCount = layout.getEllipsisCount(lineCount - <span class="number">1</span>)</span><br><span class="line">    <span class="keyword">if</span> (ellipsisCount &gt; <span class="number">0</span>) &#123;</span><br><span class="line">        Log.w(TAG, <span class="string">"Layout says it will ellipsize, skip some text now"</span>)</span><br><span class="line">        txt = txt.substring(<span class="number">0</span>, txt.length - ellipsisCount - size - <span class="number">3</span>) + title.context.getString(R.string.ellipsize_string) + <span class="string">"(精)"</span></span><br><span class="line">        Log.d(TAG, <span class="string">"we change txt from <span class="variable">$titleTxt</span> to <span class="variable">$txt</span>"</span>)</span><br><span class="line">        <span class="keyword">return</span> txt</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> txt</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="References"><a href="#References" class="headerlink" title="References"></a>References</h2><p>ref: <a href="https://stackoverflow.com/a/27631737/4380801" target="_blank" rel="noopener">https://stackoverflow.com/a/27631737/4380801</a></p>
+<p>ref: <a href="https://tristanzeng.github.io/2019/05/29/TextView%E5%A4%9A%E8%A1%8C%E6%96%87%E5%AD%97%E8%B6%85%E5%87%BA%E6%97%B6%E5%A6%82%E4%BD%95%E5%9C%A8%E7%9C%81%E7%95%A5%E5%8F%B7%E5%90%8E%E6%B7%BB%E5%8A%A0%E5%9B%BE%E6%A0%87/" target="_blank" rel="noopener">https://tristanzeng.github.io/2019/05/29/TextView%E5%A4%9A%E8%A1%8C%E6%96%87%E5%AD%97%E8%B6%85%E5%87%BA%E6%97%B6%E5%A6%82%E4%BD%95%E5%9C%A8%E7%9C%81%E7%95%A5%E5%8F%B7%E5%90%8E%E6%B7%BB%E5%8A%A0%E5%9B%BE%E6%A0%87/</a></p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://tedaliez.github.io/2020/01/12/Android-TextView%E7%BB%98%E5%88%B6%E6%8A%80%E5%B7%A7/" data-id="ckgx4rr6q0001i8x7s7m2ordm" class="article-share-link">Share</a>
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/android-textview/" rel="tag">android, textview</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2020/02/14/Android-focus%E6%A6%82%E5%BF%B5/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          Android focus概念
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2020/01/05/Kotlin%E5%8D%8F%E7%A8%8B%E6%B5%85%E6%9E%90/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">Kotlin协程浅析</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/Android-ROOM/" rel="tag">Android, ROOM</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/NDK/" rel="tag">NDK</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/TypeScript/" rel="tag">TypeScript</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/WebAssembly/" rel="tag">WebAssembly</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/WebView-JSBridge/" rel="tag">WebView, JSBridge</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/android/" rel="tag">android</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/android-jetpack-compose/" rel="tag">android, jetpack compose</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/android-mmkv/" rel="tag">android, mmkv</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/android-textview/" rel="tag">android, textview</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/kotlin/" rel="tag">kotlin</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/kotlin-coroutine/" rel="tag">kotlin, coroutine</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/kotlin-%E5%8D%8F%E7%A8%8B/" rel="tag">kotlin, 协程</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/v8-WebAssembly/" rel="tag">v8, WebAssembly</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/Android-ROOM/" style="font-size: 10px;">Android, ROOM</a> <a href="/tags/NDK/" style="font-size: 10px;">NDK</a> <a href="/tags/TypeScript/" style="font-size: 10px;">TypeScript</a> <a href="/tags/WebAssembly/" style="font-size: 15px;">WebAssembly</a> <a href="/tags/WebView-JSBridge/" style="font-size: 10px;">WebView, JSBridge</a> <a href="/tags/android/" style="font-size: 15px;">android</a> <a href="/tags/android-jetpack-compose/" style="font-size: 10px;">android, jetpack compose</a> <a href="/tags/android-mmkv/" style="font-size: 20px;">android, mmkv</a> <a href="/tags/android-textview/" style="font-size: 10px;">android, textview</a> <a href="/tags/kotlin/" style="font-size: 10px;">kotlin</a> <a href="/tags/kotlin-coroutine/" style="font-size: 10px;">kotlin, coroutine</a> <a href="/tags/kotlin-%E5%8D%8F%E7%A8%8B/" style="font-size: 10px;">kotlin, 协程</a> <a href="/tags/v8-WebAssembly/" style="font-size: 10px;">v8, WebAssembly</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/09/">September 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/08/">August 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/07/">July 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/05/">May 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/03/">March 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/02/">February 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/01/">January 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/12/">December 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/11/">November 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/09/">September 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/07/">July 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/06/">June 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/05/">May 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/03/">March 2019</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2020/09/13/FFMpeg-Android%E5%BC%80%E5%8F%91-%E7%AE%80%E5%8D%95%E9%9F%B3%E8%A7%86%E9%A2%91%E5%90%8C%E6%AD%A5/">FFMpeg-Android开发-简单音视频同步</a>
+          </li>
+        
+          <li>
+            <a href="/2020/09/12/Kotlin%E5%8D%8F%E7%A8%8B%E5%BC%82%E5%B8%B8%E5%A4%84%E7%90%86/">Kotlin协程异常处理</a>
+          </li>
+        
+          <li>
+            <a href="/2020/08/29/FFMpeg-Android%E5%BC%80%E5%8F%91-%E7%AE%80%E5%8D%95%E6%92%AD%E6%94%BE%E9%9F%B3%E9%A2%91/">FFMpeg-Android开发-简单播放音频</a>
+          </li>
+        
+          <li>
+            <a href="/2020/08/23/FFMpeg-Android%E5%BC%80%E5%8F%91-%E7%AE%80%E5%8D%95%E6%92%AD%E6%94%BE%E8%A7%86%E9%A2%91/">FFMpeg-Android开发-简单播放视频</a>
+          </li>
+        
+          <li>
+            <a href="/2020/08/22/FFMpeg-Android%E5%BC%80%E5%8F%91-%E8%A7%A3%E6%9E%90%E8%A7%86%E9%A2%91%E6%A0%BC%E5%BC%8F/">FFMpeg-Android开发-解析视频格式</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2020 Jian Guo<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+  </div>
+</body>
+</html>
