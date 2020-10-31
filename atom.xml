@@ -43,7 +43,7 @@
     <link href="https://tedaliez.github.io/2020/09/12/Kotlin%E5%8D%8F%E7%A8%8B%E5%BC%82%E5%B8%B8%E5%A4%84%E7%90%86/"/>
     <id>https://tedaliez.github.io/2020/09/12/Kotlin协程异常处理/</id>
     <published>2020-09-12T01:09:48.000Z</published>
-    <updated>2020-10-31T04:08:18.520Z</updated>
+    <updated>2020-10-31T04:38:53.895Z</updated>
     
     <summary type="html">
     
@@ -51,11 +51,11 @@
       
         
         
-          &lt;p&gt;Kotlin 的协程满足结构化语义：&lt;/p&gt;
+          &lt;p&gt;Kotlin的协程满足结构化语义：&lt;/p&gt;
 &lt;ol&gt;
 &lt;li&gt;&lt;p&gt;A parent-Coroutine finishes only after all its child-Coroutines have finished.&lt;/p&gt;
 &lt;/li&gt;
-&lt;li&gt;&lt;p&gt;When
+&lt;li&gt;&lt;p&gt;When a
         
       
     
