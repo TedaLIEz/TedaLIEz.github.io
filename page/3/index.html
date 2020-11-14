@@ -64,6 +64,120 @@
       <div class="outer">
         <section id="main">
   
+    <article id="post-APT插件实战" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2019/06/29/APT%E6%8F%92%E4%BB%B6%E5%AE%9E%E6%88%98/" class="article-date">
+  <time datetime="2019-06-29T12:34:53.000Z" itemprop="datePublished">2019-06-29</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2019/06/29/APT%E6%8F%92%E4%BB%B6%E5%AE%9E%E6%88%98/">APT插件实战</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <ul>
+<li><a href="#Annotation-Processor">Annotation Processor</a><ul>
+<li><a href="#%E6%B3%A8%E8%A7%A3%E5%A4%84%E7%90%86%E5%99%A8%E7%9A%84%E8%BF%90%E8%A1%8C%E5%8E%9F%E7%90%86">注解处理器的运行原理</a></li>
+<li><a href="#%E5%AE%9E%E7%8E%B0%E4%B8%80%E4%B8%AA%E7%AE%80%E5%8D%95%E7%9A%84%E6%B3%A8%E8%A7%A3%E5%A4%84%E7%90%86%E5%99%A8">实现一个简单的注解处理器</a><ul>
+<li><a href="#%E5%9F%BA%E6%9C%AC%E6%AD%A5%E9%AA%A4">基本步骤</a><ul>
+<li><a href="#%E8%A7%A3%E5%86%B3%E4%BE%9D%E8%B5%96">解决依赖</a></li>
+<li><a href="#%E5%88%9B%E5%BB%BA%E6%B3%A8%E8%A7%A3">创建注解</a></li>
+<li><a href="#%E5%88%9B%E5%BB%BA%E6%B3%A8%E8%A7%A3%E5%A4%84%E7%90%86%E5%99%A8">创建注解处理器</a><ul>
+<li><a href="#init">init()</a></li>
+<li><a href="#Element">Element</a></li>
+<li><a href="#Messager">Messager</a></li>
+<li><a href="#process">process()</a></li>
+<li><a href="#getSupportedAnnotationTypes">getSupportedAnnotationTypes()</a></li>
+<li><a href="#getSupportedSourceVersion">getSupportedSourceVersion()</a></li>
+</ul>
+</li>
+<li><a href="#%E6%B3%A8%E8%A7%A3%E5%A4%84%E7%90%86%E5%99%A8%E6%96%B9%E6%B3%95%E5%AE%9E%E7%8E%B0">注解处理器方法实现</a></li>
+<li><a href="#%E5%90%91javac%E5%A3%B0%E6%98%8E%E8%BF%99%E4%B8%AA%E6%B3%A8%E8%A7%A3%E5%A4%84%E7%90%86%E5%99%A8">向javac声明这个注解处理器</a></li>
+</ul>
+</li>
+<li><a href="#%E7%BC%96%E8%AF%91%E4%BD%93%E9%AA%8C%E6%88%90%E6%9E%9C">编译，体验成果</a></li>
+</ul>
+</li>
+<li><a href="#%E6%B3%A8%E8%A7%A3%E5%A4%84%E7%90%86%E5%99%A8%E4%B8%8D%E8%83%BD%E5%81%9A%08%E4%B8%8D%E5%BB%BA%E8%AE%AE%E7%9A%84%E4%BA%8B%E6%83%85">注解处理器不能做(不建议)的事情</a></li>
+<li><a href="#%E6%B3%A8%E8%A7%A3%E5%A4%84%E7%90%86%E5%99%A8%E7%9A%84%E7%89%B9%E6%80%A7">注解处理器的特性</a></li>
+</ul>
+</li>
+</ul>
+<h1 id="Annotation-Processor"><a href="#Annotation-Processor" class="headerlink" title="Annotation Processor"></a>Annotation Processor</h1><p>大量框架(例如Room, Dagger2, DataBinding, Butterknife)都利用Java1.6引入的annotation processor(后文统称注解处理器)来实现自己的框架功能。</p>
+<p>这篇文章简单介绍注解处理器</p>
+<h2 id="注解处理器的运行原理"><a href="#注解处理器的运行原理" class="headerlink" title="注解处理器的运行原理"></a>注解处理器的运行原理</h2><p>整个代码生成的过程发生在编译期，javac会获知所有的注解处理器，同时在编译时处理所有的注解。<br>由于整个过程在编译期完成，你可以认为注解处理器是编译器的一部分，因此最后的编译产物是不会包含编译处理器的内容的。</p>
+<h2 id="实现一个简单的注解处理器"><a href="#实现一个简单的注解处理器" class="headerlink" title="实现一个简单的注解处理器"></a>实现一个简单的注解处理器</h2><h3 id="基本步骤"><a href="#基本步骤" class="headerlink" title="基本步骤"></a>基本步骤</h3><ol>
+<li>创建一个注解module(Java Library)，这个module只包含注解(Annotation)</li>
+<li>创建一个处理器module(Java Library)，这个module包含相关注解的处理逻辑</li>
+</ol>
+<h4 id="解决依赖"><a href="#解决依赖" class="headerlink" title="解决依赖"></a>解决依赖</h4><p>注解相关的module不需要任何依赖。<br>处理器module需要依赖我们自定义的注解和一些工具库。上文中提到过，这个module将会在编译器完成自己的任务，因此依赖此module的app不会打包这个module的内容。所以不用担心这个module的包体积问题</p>
+<figure class="highlight groovy"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">implementation fileTree(<span class="string">dir:</span> <span class="string">'libs'</span>, <span class="string">include:</span> [<span class="string">'*.jar'</span>])</span><br><span class="line">implementation <span class="string">'com.google.guava:guava:21.0'</span></span><br><span class="line">implementation <span class="string">'com.squareup:javapoet:1.8.0'</span></span><br><span class="line">implementation project(<span class="string">':annotation'</span>)</span><br></pre></td></tr></table></figure>
+<p>之后给我们的app添加上注解处理器的编译依赖，这里使用另外一个依赖关键字<code>annotationProcessor</code></p>
+<figure class="highlight groovy"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">implementation project(<span class="string">':annotation'</span>)</span><br><span class="line">annotationProcessor project(<span class="string">':processor'</span>)</span><br></pre></td></tr></table></figure>
+<p><code>annotationProcessor</code>表示我们只需要编译期有这个依赖，不需要打包进apk</p>
+<h4 id="创建注解"><a href="#创建注解" class="headerlink" title="创建注解"></a>创建注解</h4><p>这里复习一下Java中注解的相关概念</p>
+<p><code>@Target</code>:指明你的注解作用的对象，可以有许多类型<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">enum</span> ElementType &#123;</span><br><span class="line">    TYPE, <span class="comment">//If you want to annotate class, interface, enum..</span></span><br><span class="line">    FIELD, <span class="comment">//If you want to annotate field (includes enum constants)</span></span><br><span class="line">    METHOD, <span class="comment">//If you want to annotate method</span></span><br><span class="line">    PARAMETER, <span class="comment">//If you want to annotate parameter</span></span><br><span class="line">    CONSTRUCTOR, <span class="comment">//If you want to annotate constructor</span></span><br><span class="line">    LOCAL_VARIABLE, <span class="comment">//..</span></span><br><span class="line">    ANNOTATION_TYPE, <span class="comment">//..</span></span><br><span class="line">    PACKAGE, <span class="comment">//..</span></span><br><span class="line">    TYPE_PARAMETER, <span class="comment">//..(java 8)</span></span><br><span class="line">    TYPE_USE; <span class="comment">//..(java 8)</span></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">private</span> <span class="title">ElementType</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p><code>@Retention</code>:指明注解如何存储，有三种存储方式</p>
+<ol>
+<li>SOURCE—用于编译期，不会保存</li>
+<li>CLASS—保存到最后的class文件，运行期不会保留</li>
+<li>RUNTIME—保存到class文件，同时运行期也会保留(用于反射)</li>
+</ol>
+<p>我们这个场景只需要编译期注解:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Retention</span>(RetentionPolicy.SOURCE)</span><br><span class="line"><span class="meta">@Target</span>(ElementType.TYPE)</span><br><span class="line"><span class="keyword">public</span> <span class="meta">@interface</span> NewIntent &#123;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h4 id="创建注解处理器"><a href="#创建注解处理器" class="headerlink" title="创建注解处理器"></a>创建注解处理器</h4><p>在注解处理器模块添加一个新类<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.github.tedaliez.processor;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> java.util.Set;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> javax.annotation.processing.AbstractProcessor;</span><br><span class="line"><span class="keyword">import</span> javax.annotation.processing.ProcessingEnvironment;</span><br><span class="line"><span class="keyword">import</span> javax.annotation.processing.RoundEnvironment;</span><br><span class="line"><span class="keyword">import</span> javax.lang.model.SourceVersion;</span><br><span class="line"><span class="keyword">import</span> javax.lang.model.element.TypeElement;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">NewIntentProcessor</span> <span class="keyword">extends</span> <span class="title">AbstractProcessor</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> Types typeUtils;</span><br><span class="line">    <span class="keyword">private</span> Elements elementUtils;</span><br><span class="line">    <span class="keyword">private</span> Filer filer;</span><br><span class="line">    <span class="keyword">private</span> Messager messager;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">synchronized</span> <span class="keyword">void</span> <span class="title">init</span><span class="params">(ProcessingEnvironment processingEnvironment)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">super</span>.init(processingEnvironment);</span><br><span class="line">        typeUtils = processingEnv.getTypeUtils();</span><br><span class="line">        elementUtils = processingEnv.getElementUtils();</span><br><span class="line">        filer = processingEnv.getFiler();</span><br><span class="line">        messager = processingEnv.getMessager();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">process</span><span class="params">(Set&lt;? extends TypeElement&gt; set, RoundEnvironment roundEnvironment)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">false</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> Set&lt;String&gt; <span class="title">getSupportedAnnotationTypes</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">super</span>.getSupportedAnnotationTypes();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> SourceVersion <span class="title">getSupportedSourceVersion</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">super</span>.getSupportedSourceVersion();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h5 id="init"><a href="#init" class="headerlink" title="init()"></a>init()</h5><p>初始化的回调。在这个方法中我们创建了四个类型的引用:</p>
+<ol>
+<li>Elements:Element(下文介绍)的工具类</li>
+<li>Types:TypeMirror(下文介绍)的工具类</li>
+<li>Filer:用来创建文件</li>
+<li>Messager:用来当注解处理器出现编译错误时打印错误信息<h5 id="Element"><a href="#Element" class="headerlink" title="Element"></a>Element</h5>注解处理过程中我们会扫描我们的java源代码。每个代码都有一个确定的Element类型，换句话说，Elment代表了一个程序的语言层级的元素</li>
+</ol>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.example;	<span class="comment">// PackageElement</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Foo</span> </span>&#123;		<span class="comment">// TypeElement</span></span><br><span class="line"></span><br><span class="line">	<span class="keyword">private</span> <span class="keyword">int</span> a;		<span class="comment">// VariableElement</span></span><br><span class="line">	<span class="keyword">private</span> Foo other; 	<span class="comment">// VariableElement</span></span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="title">Foo</span> <span class="params">()</span> </span>&#123;&#125; 	<span class="comment">// ExecuteableElement</span></span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">setA</span> <span class="params">( 	// ExecuteableElement</span></span></span><br><span class="line"><span class="function"><span class="params">	                 <span class="keyword">int</span> newA	// TypeElement</span></span></span><br><span class="line"><span class="function"><span class="params">	                 )</span> </span>&#123;&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>但是你不能从Element中获取类的相关信息，例如类的父类关系。这类信息得从TypeMirror中获得</p>
+<h5 id="Messager"><a href="#Messager" class="headerlink" title="Messager"></a>Messager</h5><p>用来当注解处理器出现编译错误时打印错误信息，需要注意的是当有异常出现时，你的注解处理器也应该正常结束而非选择抛出异常。如果抛出异常结束，那么javac会打印你的堆栈，但你messager的信息则不会被打印出来</p>
+<h5 id="process"><a href="#process" class="headerlink" title="process()"></a>process()</h5><p>注解处理器中最重要的方法，方法提供了所有被注解的元素。在这个函数中你可以来处理你的注解，我们在这里实现生成代码的逻辑</p>
+<h5 id="getSupportedAnnotationTypes"><a href="#getSupportedAnnotationTypes" class="headerlink" title="getSupportedAnnotationTypes()"></a>getSupportedAnnotationTypes()</h5><p>返回注解处理器支持的注解类型，你可以认为这个方法的返回值是<code>process</code>方法的第一个参数值。这个方法也可以使用<code>@SupportedAnnotationTypes</code>注解来替代，二者等效</p>
+<h5 id="getSupportedSourceVersion"><a href="#getSupportedSourceVersion" class="headerlink" title="getSupportedSourceVersion()"></a>getSupportedSourceVersion()</h5><p>指明支持代码生成的java版本。这个方法也可以使用<code>@SupportedSourceVersion</code>注解来替代，二者等效</p>
+<h4 id="注解处理器方法实现"><a href="#注解处理器方法实现" class="headerlink" title="注解处理器方法实现"></a>注解处理器方法实现</h4><p>推荐使用JavaPoet来完成新的class文件的生成</p>
+<h4 id="向javac声明这个注解处理器"><a href="#向javac声明这个注解处理器" class="headerlink" title="向javac声明这个注解处理器"></a>向javac声明这个注解处理器</h4><p>在处理器模块代码根目录下(一般是src/main)，创建resources/META-INF/services/javax.annotation.processing.Processor文件，在这个文件中声明你的注解器类路径<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">com.github.tedaliez.processor.NewIntentProcessor</span><br></pre></td></tr></table></figure></p>
+<p>换行可以声明下一个注解器的路径，这里我们只有一个。</p>
+<h3 id="编译，体验成果"><a href="#编译，体验成果" class="headerlink" title="编译，体验成果"></a>编译，体验成果</h3><p>具体的代码可以参考<a href="https://github.com/TedaLIEz/AptExample" target="_blank" rel="noopener">https://github.com/TedaLIEz/AptExample</a></p>
+<h2 id="注解处理器不能做-不建议-的事情"><a href="#注解处理器不能做-不建议-的事情" class="headerlink" title="注解处理器不能做(不建议)的事情"></a>注解处理器不能做(不建议)的事情</h2><ol>
+<li>修改已有的类文件。注解处理器的初衷是希望用注解来生成一些新的类文件，修改已有的类文件可能会有办法，但属于特殊技巧</li>
+<li>受1的限制，注解处理器并不能很好地实现面向切面编程，因为我们很难侵入到一个方法执行过程中加入一段我们的代码。</li>
+</ol>
+<h2 id="注解处理器的特性"><a href="#注解处理器的特性" class="headerlink" title="注解处理器的特性"></a>注解处理器的特性</h2><p>注解处理器有下面几个特性:</p>
+<ol>
+<li>提供编译期的错误检查(fail-fast).更容易暴露错误和调试，个人认为这是注解处理器解决问题的最大优势</li>
+<li>提供了类似C++的模版能力，比C++的模版有着更好的错误信息</li>
+<li>避开了运行期使用反射获取注解带来的性能问题</li>
+</ol>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://tedaliez.github.io/2019/06/29/APT%E6%8F%92%E4%BB%B6%E5%AE%9E%E6%88%98/" data-id="ckgx4rr6l0000i8x7pyiqej01" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+</article>
+
+
+  
     <article id="post-v8执行WebAssembly遇到的问题和解决方法" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
     <a href="/2019/06/06/v8%E6%89%A7%E8%A1%8CWebAssembly%E9%81%87%E5%88%B0%E7%9A%84%E9%97%AE%E9%A2%98%E5%92%8C%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95/" class="article-date">
@@ -551,7 +665,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">Tag Cloud</h3>
     <div class="widget tagcloud">
-      <a href="/tags/Android-ROOM/" style="font-size: 10px;">Android, ROOM</a> <a href="/tags/NDK/" style="font-size: 10px;">NDK</a> <a href="/tags/TypeScript/" style="font-size: 10px;">TypeScript</a> <a href="/tags/WebAssembly/" style="font-size: 15px;">WebAssembly</a> <a href="/tags/WebView-JSBridge/" style="font-size: 10px;">WebView, JSBridge</a> <a href="/tags/android/" style="font-size: 15px;">android</a> <a href="/tags/android-jetpack-compose/" style="font-size: 10px;">android, jetpack compose</a> <a href="/tags/android-mmkv/" style="font-size: 20px;">android, mmkv</a> <a href="/tags/android-textview/" style="font-size: 10px;">android, textview</a> <a href="/tags/kotlin/" style="font-size: 10px;">kotlin</a> <a href="/tags/kotlin-coroutine/" style="font-size: 10px;">kotlin, coroutine</a> <a href="/tags/kotlin-%E5%8D%8F%E7%A8%8B/" style="font-size: 10px;">kotlin, 协程</a> <a href="/tags/v8-WebAssembly/" style="font-size: 10px;">v8, WebAssembly</a>
+      <a href="/tags/Android-ROOM/" style="font-size: 10px;">Android, ROOM</a> <a href="/tags/NDK/" style="font-size: 10px;">NDK</a> <a href="/tags/TypeScript/" style="font-size: 10px;">TypeScript</a> <a href="/tags/WebAssembly/" style="font-size: 15px;">WebAssembly</a> <a href="/tags/WebView-JSBridge/" style="font-size: 10px;">WebView, JSBridge</a> <a href="/tags/android/" style="font-size: 20px;">android</a> <a href="/tags/android-jetpack-compose/" style="font-size: 10px;">android, jetpack compose</a> <a href="/tags/android-mmkv/" style="font-size: 20px;">android, mmkv</a> <a href="/tags/android-textview/" style="font-size: 10px;">android, textview</a> <a href="/tags/kotlin/" style="font-size: 10px;">kotlin</a> <a href="/tags/kotlin-coroutine/" style="font-size: 10px;">kotlin, coroutine</a> <a href="/tags/kotlin-%E5%8D%8F%E7%A8%8B/" style="font-size: 10px;">kotlin, 协程</a> <a href="/tags/v8-WebAssembly/" style="font-size: 10px;">v8, WebAssembly</a>
     </div>
   </div>
 
@@ -560,7 +674,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">Archives</h3>
     <div class="widget">
-      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/09/">September 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/08/">August 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/07/">July 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/05/">May 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/03/">March 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/02/">February 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/01/">January 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/12/">December 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/11/">November 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/09/">September 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/07/">July 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/06/">June 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/05/">May 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/03/">March 2019</a></li></ul>
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/11/">November 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/09/">September 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/08/">August 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/07/">July 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/05/">May 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/03/">March 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/02/">February 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/01/">January 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/12/">December 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/11/">November 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/09/">September 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/07/">July 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/06/">June 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/05/">May 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/03/">March 2019</a></li></ul>
     </div>
   </div>
 
@@ -571,6 +685,10 @@
     <h3 class="widget-title">Recent Posts</h3>
     <div class="widget">
       <ul>
+        
+          <li>
+            <a href="/2020/11/14/Android%E5%B5%8C%E5%A5%97%E6%BB%9A%E5%8A%A8/">Android嵌套滚动</a>
+          </li>
         
           <li>
             <a href="/2020/09/13/FFMpeg-Android%E5%BC%80%E5%8F%91-%E7%AE%80%E5%8D%95%E9%9F%B3%E8%A7%86%E9%A2%91%E5%90%8C%E6%AD%A5/">FFMpeg-Android开发-简单音视频同步</a>
@@ -586,10 +704,6 @@
         
           <li>
             <a href="/2020/08/23/FFMpeg-Android%E5%BC%80%E5%8F%91-%E7%AE%80%E5%8D%95%E6%92%AD%E6%94%BE%E8%A7%86%E9%A2%91/">FFMpeg-Android开发-简单播放视频</a>
-          </li>
-        
-          <li>
-            <a href="/2020/08/22/FFMpeg-Android%E5%BC%80%E5%8F%91-%E8%A7%A3%E6%9E%90%E8%A7%86%E9%A2%91%E6%A0%BC%E5%BC%8F/">FFMpeg-Android开发-解析视频格式</a>
           </li>
         
       </ul>

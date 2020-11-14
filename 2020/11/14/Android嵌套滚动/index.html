@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+
+  
+  <title>Android嵌套滚动 | Aichi_B7A</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="Android Design包通过提供NestedScrollingChild和NestedScrollingParent来帮助开发实现嵌套滑动效果 NestedScrollingChild与NestedScrollingParent关系简述   NestedScrollingChild NestedScrollingParent 备注     dispatchNestedScroll onNes">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Android嵌套滚动">
+<meta property="og:url" content="https://tedaliez.github.io/2020/11/14/Android%E5%B5%8C%E5%A5%97%E6%BB%9A%E5%8A%A8/index.html">
+<meta property="og:site_name" content="Aichi_B7A">
+<meta property="og:description" content="Android Design包通过提供NestedScrollingChild和NestedScrollingParent来帮助开发实现嵌套滑动效果 NestedScrollingChild与NestedScrollingParent关系简述   NestedScrollingChild NestedScrollingParent 备注     dispatchNestedScroll onNes">
+<meta property="og:locale">
+<meta property="article:published_time" content="2020-11-14T01:26:07.000Z">
+<meta property="article:modified_time" content="2020-11-14T01:30:09.060Z">
+<meta property="article:author" content="Jian Guo">
+<meta property="article:tag" content="android">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="/atom.xml" title="Aichi_B7A" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+<meta name="generator" content="Hexo 5.2.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Aichi_B7A</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="https://tedaliez.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-Android嵌套滚动" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2020/11/14/Android%E5%B5%8C%E5%A5%97%E6%BB%9A%E5%8A%A8/" class="article-date">
+  <time datetime="2020-11-14T01:26:07.000Z" itemprop="datePublished">2020-11-14</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      Android嵌套滚动
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>Android Design包通过提供NestedScrollingChild和NestedScrollingParent来帮助开发实现嵌套滑动效果</p>
+<h2 id="NestedScrollingChild与NestedScrollingParent关系简述"><a href="#NestedScrollingChild与NestedScrollingParent关系简述" class="headerlink" title="NestedScrollingChild与NestedScrollingParent关系简述"></a>NestedScrollingChild与NestedScrollingParent关系简述</h2><table>
+<thead>
+<tr>
+<th>NestedScrollingChild</th>
+<th>NestedScrollingParent</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>dispatchNestedScroll</td>
+<td>onNestedScroll</td>
+<td>分发嵌套滑动事件,在子View滑动处理完之后调用， unconsumed表示未被子View滚动消费的距离, consumed表示被子View消费的滚动距离</td>
+</tr>
+<tr>
+<td>startNestedScroll</td>
+<td>onStartNestedScroll</td>
+<td>前者的调用会触发后者的调用,然后后者的返回值将决定后续的嵌套滑动事件是否能传递给父View,如果返回false,父View将不处理嵌套滑动事件,一般前者的返回值即后者的返回值</td>
+</tr>
+<tr>
+<td></td>
+<td>onNestedScrollAccepted</td>
+<td>如果onStartNestedScroll返回true,则回调此方法</td>
+</tr>
+<tr>
+<td>stopNestedScroll</td>
+<td>onStopNestedScroll</td>
+</tr>
+<tr>
+<td>dispatchNestedPreScroll</td>
+<td>onNestedPreScroll</td>
+<td>分发预嵌套滑动事件,在子View滑动处理之前调用, 通过consumed数组得到NestedScrollingParent消耗掉的滚动距离</td>
+</tr>
+<tr>
+<td>dispatchNestedFling</td>
+<td>onNestedFling</td>
+<td></td>
+</tr>
+<tr>
+<td>dispatchNestedPreFling</td>
+<td>onNestedPreFling</td>
+<td></td>
+</tr>
+<tr>
+<td></td>
+<td>getNestedScrollAxes</td>
+<td>获得滑动方向,没有回调,为主动调用的方法</td>
+</tr>
+</tbody>
+</table>
+<h2 id="举例说明-SwipeRefreshLayout-amp-amp-RecyclerView嵌套"><a href="#举例说明-SwipeRefreshLayout-amp-amp-RecyclerView嵌套" class="headerlink" title="举例说明: SwipeRefreshLayout &amp;&amp; RecyclerView嵌套"></a>举例说明: SwipeRefreshLayout &amp;&amp; RecyclerView嵌套</h2><p>本例子中，SwipeRefreshLayout为NestedScrollingParent，而RecyclerView为NestedScrollingChild</p>
+<p>根据触摸事件分发机制，ACTION_DOWN首先会来到<code>SwipeRefreshLayout#onInterceptTouchEvent</code>, 而SwipeRefreshLayout未做拦截，因此来到RecyclerView#onTouchEvent, 而RecyclerView#onTouchEvent针对ACTION_DOWN返回true；之后的所有事件都会传递到RecyclerView中，之后我们看下RecyclerView中对ACTION_MOVE事件的处理</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="keyword">case</span> MotionEvent.ACTION_MOVE: &#123;</span><br><span class="line">    <span class="comment">// ... </span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (dispatchNestedPreScroll(dx, dy, mScrollConsumed, mScrollOffset, TYPE_TOUCH)) &#123;</span><br><span class="line">        dx -= mScrollConsumed[<span class="number">0</span>]; <span class="comment">// 得到parent消费滚动后的剩余y距离</span></span><br><span class="line">        dy -= mScrollConsumed[<span class="number">1</span>]; <span class="comment">// 得到parent消费滚动后的剩余x距离</span></span><br><span class="line">        vtev.offsetLocation(mScrollOffset[<span class="number">0</span>], mScrollOffset[<span class="number">1</span>]);</span><br><span class="line">        <span class="comment">// Updated the nested offsets</span></span><br><span class="line">        mNestedOffsets[<span class="number">0</span>] += mScrollOffset[<span class="number">0</span>];</span><br><span class="line">        mNestedOffsets[<span class="number">1</span>] += mScrollOffset[<span class="number">1</span>];</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (mScrollState == SCROLL_STATE_DRAGGING) &#123;</span><br><span class="line">        mLastTouchX = x - mScrollOffset[<span class="number">0</span>];</span><br><span class="line">        mLastTouchY = y - mScrollOffset[<span class="number">1</span>];</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (scrollByInternal(</span><br><span class="line">                canScrollHorizontally ? dx : <span class="number">0</span>,</span><br><span class="line">                canScrollVertically ? dy : <span class="number">0</span>,</span><br><span class="line">                vtev)) &#123;</span><br><span class="line">            getParent().requestDisallowInterceptTouchEvent(<span class="keyword">true</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (mGapWorker != <span class="keyword">null</span> &amp;&amp; (dx != <span class="number">0</span> || dy != <span class="number">0</span>)) &#123;</span><br><span class="line">            mGapWorker.postFromTraversal(<span class="keyword">this</span>, dx, dy);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125; <span class="keyword">break</span>;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>关注这里的<code>dispatchNestedPreScroll</code>和<code>scrollByInternal</code>方法， <code>dispatchNestedPreScroll</code>最终会触发<code>SwipeRefreshLayout#onNestedPreScroll</code>方法，<code>scrollByInternal</code>会调用<code>dispatchNestedScroll</code>方法，最终也来到<code>SwipeRefreshLayout#onNestedScroll</code></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onNestedScroll</span><span class="params">(<span class="keyword">final</span> View target, <span class="keyword">final</span> <span class="keyword">int</span> dxConsumed, <span class="keyword">final</span> <span class="keyword">int</span> dyConsumed,</span></span></span><br><span class="line"><span class="function"><span class="params">        <span class="keyword">final</span> <span class="keyword">int</span> dxUnconsumed, <span class="keyword">final</span> <span class="keyword">int</span> dyUnconsumed)</span> </span>&#123;</span><br><span class="line">    <span class="comment">//将nestedScroll传递给Parent</span></span><br><span class="line">    dispatchNestedScroll(dxConsumed, dyConsumed, dxUnconsumed, dyUnconsumed,</span><br><span class="line">            mParentOffsetInWindow);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">final</span> <span class="keyword">int</span> dy = dyUnconsumed + mParentOffsetInWindow[<span class="number">1</span>];</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (dy &lt; <span class="number">0</span> &amp;&amp; !canChildScrollUp()) &#123; <span class="comment">//注意canChildScrollUp方法</span></span><br><span class="line">        mTotalUnconsumed += Math.abs(dy);</span><br><span class="line"></span><br><span class="line">        moveSpinner(mTotalUnconsumed); <span class="comment">//处理refreshView的滑动</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onNestedPreScroll</span><span class="params">(View target, <span class="keyword">int</span> dx, <span class="keyword">int</span> dy, <span class="keyword">int</span>[] consumed)</span> </span>&#123;</span><br><span class="line">    <span class="comment">//只有当refreshView已经出现在屏幕中，并且手指往上移动才会调用下面的代码</span></span><br><span class="line">    <span class="keyword">if</span> (dy &gt; <span class="number">0</span> &amp;&amp; mTotalUnconsumed &gt; <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="keyword">if</span> (dy &gt; mTotalUnconsumed) &#123;</span><br><span class="line">            consumed[<span class="number">1</span>] = dy - (<span class="keyword">int</span>) mTotalUnconsumed;</span><br><span class="line">            mTotalUnconsumed = <span class="number">0</span>;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            mTotalUnconsumed -= dy;</span><br><span class="line">            consumed[<span class="number">1</span>] = dy;  <span class="comment">//消耗掉的距离, 这里回返回给RecyclerView</span></span><br><span class="line">        &#125;</span><br><span class="line">        moveSpinner(mTotalUnconsumed);<span class="comment">//处理refreshView的滑动</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// refreshView移除屏幕</span></span><br><span class="line">    <span class="keyword">if</span> (mUsingCustomStart &amp;&amp; dy &gt; <span class="number">0</span> &amp;&amp; mTotalUnconsumed == <span class="number">0</span></span><br><span class="line">            &amp;&amp; Math.abs(dy - consumed[<span class="number">1</span>]) &gt; <span class="number">0</span>) &#123;</span><br><span class="line">        mCircleView.setVisibility(View.GONE);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 将nestedPreScroll传递到Parent去（本文可以忽略）</span></span><br><span class="line">    <span class="keyword">final</span> <span class="keyword">int</span>[] parentConsumed = mParentScrollConsumed;</span><br><span class="line">    <span class="keyword">if</span> (dispatchNestedPreScroll(dx - consumed[<span class="number">0</span>], dy - consumed[<span class="number">1</span>], parentConsumed, <span class="keyword">null</span>)) &#123;</span><br><span class="line">        consumed[<span class="number">0</span>] += parentConsumed[<span class="number">0</span>];</span><br><span class="line">        consumed[<span class="number">1</span>] += parentConsumed[<span class="number">1</span>];</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>嵌套滚动时一个核心问题是当手指滑动时，这个滑动的距离由谁消费？为了解决这个问题，NestedScrollingParent引入了consumed这个概念，通过一个consumed数组的引用，可以告知上层View消费掉了多少距离，而子View则可以根据这个消费掉的距离，以及滑动的总距离，来处理自己的滑动距离</p>
+<p>在本例子中，<code>手指移动的距离 = refreshView滑动的距离 + RecyclerView滑动的距离</code></p>
+<h2 id="如何在代码中实现嵌套滚动效果"><a href="#如何在代码中实现嵌套滚动效果" class="headerlink" title="如何在代码中实现嵌套滚动效果"></a>如何在代码中实现嵌套滚动效果</h2><p>对一个NestedScrollingChild首先调用startNestedScroll，之后调用dispatchNestedScroll即可</p>
+<figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">recyclerView.startNestedScroll(ViewCompat.SCROLL_AXIS_VERTICAL)</span><br><span class="line"><span class="keyword">val</span> arr = IntArray(<span class="number">2</span>)</span><br><span class="line">recyclerView.dispatchNestedPreScroll(<span class="number">0</span>, offsetY, arr, <span class="literal">null</span>)</span><br><span class="line"><span class="keyword">val</span> dyUnconsumed = offsetY - arr[<span class="number">1</span>]</span><br><span class="line"><span class="keyword">if</span> (dyUnconsumed != <span class="number">0</span>) &#123;</span><br><span class="line">    recyclerView.scrollBy(<span class="number">0</span>, dyUnconsumed)</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://tedaliez.github.io/2020/11/14/Android%E5%B5%8C%E5%A5%97%E6%BB%9A%E5%8A%A8/" data-id="ckhh0ji5b0000y1x711wo8311" class="article-share-link">Share</a>
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/android/" rel="tag">android</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+  
+    <a href="/2020/09/13/FFMpeg-Android%E5%BC%80%E5%8F%91-%E7%AE%80%E5%8D%95%E9%9F%B3%E8%A7%86%E9%A2%91%E5%90%8C%E6%AD%A5/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">FFMpeg-Android开发-简单音视频同步</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/Android-ROOM/" rel="tag">Android, ROOM</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/NDK/" rel="tag">NDK</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/TypeScript/" rel="tag">TypeScript</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/WebAssembly/" rel="tag">WebAssembly</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/WebView-JSBridge/" rel="tag">WebView, JSBridge</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/android/" rel="tag">android</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/android-jetpack-compose/" rel="tag">android, jetpack compose</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/android-mmkv/" rel="tag">android, mmkv</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/android-textview/" rel="tag">android, textview</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/kotlin/" rel="tag">kotlin</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/kotlin-coroutine/" rel="tag">kotlin, coroutine</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/kotlin-%E5%8D%8F%E7%A8%8B/" rel="tag">kotlin, 协程</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/v8-WebAssembly/" rel="tag">v8, WebAssembly</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/Android-ROOM/" style="font-size: 10px;">Android, ROOM</a> <a href="/tags/NDK/" style="font-size: 10px;">NDK</a> <a href="/tags/TypeScript/" style="font-size: 10px;">TypeScript</a> <a href="/tags/WebAssembly/" style="font-size: 15px;">WebAssembly</a> <a href="/tags/WebView-JSBridge/" style="font-size: 10px;">WebView, JSBridge</a> <a href="/tags/android/" style="font-size: 20px;">android</a> <a href="/tags/android-jetpack-compose/" style="font-size: 10px;">android, jetpack compose</a> <a href="/tags/android-mmkv/" style="font-size: 20px;">android, mmkv</a> <a href="/tags/android-textview/" style="font-size: 10px;">android, textview</a> <a href="/tags/kotlin/" style="font-size: 10px;">kotlin</a> <a href="/tags/kotlin-coroutine/" style="font-size: 10px;">kotlin, coroutine</a> <a href="/tags/kotlin-%E5%8D%8F%E7%A8%8B/" style="font-size: 10px;">kotlin, 协程</a> <a href="/tags/v8-WebAssembly/" style="font-size: 10px;">v8, WebAssembly</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/11/">November 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/09/">September 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/08/">August 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/07/">July 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/05/">May 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/03/">March 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/02/">February 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/01/">January 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/12/">December 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/11/">November 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/09/">September 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/07/">July 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/06/">June 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/05/">May 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/03/">March 2019</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2020/11/14/Android%E5%B5%8C%E5%A5%97%E6%BB%9A%E5%8A%A8/">Android嵌套滚动</a>
+          </li>
+        
+          <li>
+            <a href="/2020/09/13/FFMpeg-Android%E5%BC%80%E5%8F%91-%E7%AE%80%E5%8D%95%E9%9F%B3%E8%A7%86%E9%A2%91%E5%90%8C%E6%AD%A5/">FFMpeg-Android开发-简单音视频同步</a>
+          </li>
+        
+          <li>
+            <a href="/2020/09/12/Kotlin%E5%8D%8F%E7%A8%8B%E5%BC%82%E5%B8%B8%E5%A4%84%E7%90%86/">Kotlin协程异常处理</a>
+          </li>
+        
+          <li>
+            <a href="/2020/08/29/FFMpeg-Android%E5%BC%80%E5%8F%91-%E7%AE%80%E5%8D%95%E6%92%AD%E6%94%BE%E9%9F%B3%E9%A2%91/">FFMpeg-Android开发-简单播放音频</a>
+          </li>
+        
+          <li>
+            <a href="/2020/08/23/FFMpeg-Android%E5%BC%80%E5%8F%91-%E7%AE%80%E5%8D%95%E6%92%AD%E6%94%BE%E8%A7%86%E9%A2%91/">FFMpeg-Android开发-简单播放视频</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2020 Jian Guo<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+  </div>
+</body>
+</html>
